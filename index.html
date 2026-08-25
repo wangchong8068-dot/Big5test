@@ -1,0 +1,1269 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Big Five 大五人格测试</title>
+  <style>
+    :root{
+      color-scheme: dark;
+      --bg:#0f172a;
+      --panel:#111c33;
+      --panel-2:#16233f;
+      --border:rgba(148,163,184,.18);
+      --text:#e5eefb;
+      --muted:#8fa3bf;
+      --accent:#60a5fa;
+      --good:#34d399;
+      --warn:#f59e0b;
+      --bad:#fb7185;
+      --shadow:0 18px 50px rgba(0,0,0,.28);
+      --r:14px;
+      --o:#38bdf8;
+      --c:#34d399;
+      --e:#f59e0b;
+      --a:#22d3ee;
+      --n:#fb7185;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+      background:radial-gradient(circle at top, rgba(56,189,248,.12), transparent 28%), var(--bg);
+      color:var(--text);
+    }
+    a{color:inherit}
+    button,input{font:inherit}
+    .app{
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+    }
+    .shell{
+      width:min(1080px, calc(100vw - 24px));
+      margin:0 auto;
+      padding:16px 0 28px;
+    }
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
+    }
+    .logo{
+      width:42px;height:42px;border-radius:12px;
+      background:linear-gradient(135deg, rgba(56,189,248,.95), rgba(52,211,153,.95));
+      box-shadow:var(--shadow);
+      flex:0 0 auto;
+    }
+    .brand h1{
+      margin:0;
+      font-size:20px;
+      line-height:1.1;
+    }
+    .brand p,.hint{margin:0;color:var(--muted);font-size:13px}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .btn{
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      border-radius:12px;
+      padding:10px 14px;
+      cursor:pointer;
+      transition:.18s ease;
+      box-shadow:none;
+    }
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.06)}
+    .btn.primary{
+      background:linear-gradient(135deg, rgba(56,189,248,.95), rgba(59,130,246,.9));
+      border-color:transparent;
+      color:#fff;
+    }
+    .btn.good{
+      background:linear-gradient(135deg, rgba(52,211,153,.95), rgba(16,185,129,.9));
+      border-color:transparent;
+      color:#06261c;
+      font-weight:700;
+    }
+    .btn.ghost{background:transparent}
+    .grid{
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:16px;
+    }
+    .panel{
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+      border:1px solid var(--border);
+      border-radius:var(--r);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .panel .head{
+      padding:16px 16px 10px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .panel .body{padding:16px}
+    .hero{
+      padding:20px 16px 12px;
+      display:grid;
+      gap:12px;
+    }
+    .hero h2{
+      margin:0;
+      font-size:28px;
+      line-height:1.15;
+    }
+    .hero p{margin:0;color:var(--muted)}
+    .subgrid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px;
+    }
+    .mini{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:12px;
+      padding:12px;
+      min-height:82px;
+    }
+    .mini .k{font-size:12px;color:var(--muted)}
+    .mini .v{font-size:20px;font-weight:700;margin-top:6px}
+    .progressWrap{display:grid;gap:8px;margin-top:4px}
+    .progressLine{
+      height:10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.06);
+      overflow:hidden;
+    }
+    .progressBar{
+      height:100%;
+      width:0;
+      border-radius:inherit;
+      background:linear-gradient(90deg, rgba(56,189,248,.95), rgba(52,211,153,.95));
+      transition:width .22s ease;
+    }
+    .questionCard{
+      padding:16px;
+      display:grid;
+      gap:12px;
+    }
+    .questionMeta{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      color:var(--muted);
+      font-size:13px;
+    }
+    .questionText{
+      font-size:20px;
+      line-height:1.35;
+      font-weight:650;
+      margin:0;
+    }
+    .questionSub{
+      color:var(--muted);
+      margin:0;
+      font-size:13px;
+    }
+    .scale{
+      display:grid;
+      grid-template-columns:repeat(5,minmax(0,1fr));
+      gap:8px;
+    }
+    .scale button{
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      padding:12px 8px;
+      min-height:64px;
+      cursor:pointer;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      gap:3px;
+      transition:.18s ease;
+    }
+    .scale button .num{font-size:20px;font-weight:800}
+    .scale button .lab{font-size:12px;color:var(--muted)}
+    .scale button.selected{
+      background:rgba(56,189,248,.14);
+      border-color:rgba(56,189,248,.45);
+      box-shadow:0 0 0 2px rgba(56,189,248,.14) inset;
+    }
+    .nav{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:8px;
+    }
+    .nav .btn{min-width:110px}
+    .results{
+      display:none;
+      gap:16px;
+    }
+    .results.show{display:grid}
+    .reportHero{
+      display:grid;
+      gap:12px;
+      padding:18px 16px;
+    }
+    .reportTop{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+    }
+    .reportTitle{
+      margin:0;
+      font-size:26px;
+      line-height:1.1;
+    }
+    .reportMeta{color:var(--muted);font-size:13px}
+    .summary{
+      display:grid;
+      grid-template-columns:repeat(5,minmax(0,1fr));
+      gap:10px;
+    }
+    .scoreCard{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:12px;
+      padding:12px;
+      min-height:102px;
+      display:grid;
+      gap:8px;
+    }
+    .scoreCard .name{display:flex;justify-content:space-between;gap:6px;align-items:center}
+    .scoreCard .name span{font-weight:700}
+    .scoreCard .score{font-size:28px;font-weight:800}
+    .bar{
+      height:10px;
+      background:rgba(255,255,255,.08);
+      border-radius:999px;
+      overflow:hidden;
+    }
+    .bar > i{display:block;height:100%;border-radius:inherit}
+    .barLabel{font-size:12px;color:var(--muted)}
+    .insightGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+    .insight{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:12px;
+      padding:14px;
+    }
+    .insight h3{
+      margin:0 0 8px;
+      font-size:16px;
+    }
+    .insight p{margin:0;color:var(--text)}
+    .sectionTitle{
+      margin:0 0 12px;
+      font-size:18px;
+    }
+    .detailList{
+      display:grid;
+      gap:10px;
+    }
+    details{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:12px;
+      padding:12px 14px;
+    }
+    summary{
+      cursor:pointer;
+      font-weight:700;
+    }
+    .detailTable{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:10px;
+      font-size:13px;
+    }
+    .detailTable th,.detailTable td{
+      text-align:left;
+      padding:8px 6px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      vertical-align:top;
+    }
+    .detailTable th{color:var(--muted);font-weight:600}
+    .footnote{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.5;
+    }
+    .copyBox{
+      width:100%;
+      min-height:180px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(0,0,0,.16);
+      color:var(--text);
+      padding:12px;
+      resize:vertical;
+      white-space:pre-wrap;
+    }
+    .hidden{display:none!important}
+    .status{
+      color:var(--muted);
+      font-size:13px;
+    }
+    .accentO{color:var(--o)}
+    .accentC{color:var(--c)}
+    .accentE{color:var(--e)}
+    .accentA{color:var(--a)}
+    .accentN{color:var(--n)}
+    .rightStack{display:grid;gap:10px}
+    .historyList{display:grid;gap:10px}
+    .historyItem{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      padding:12px;
+      border:1px solid rgba(255,255,255,.06);
+      background:rgba(255,255,255,.03);
+      border-radius:12px;
+    }
+    .historyItem .small{font-size:12px;color:var(--muted)}
+    @media (max-width: 940px){
+      .grid,.summary,.insightGrid,.subgrid{grid-template-columns:1fr 1fr}
+      .shell{width:min(100vw - 16px,1080px)}
+    }
+    @media (max-width: 760px){
+      .topbar{flex-direction:column;align-items:stretch}
+      .toolbar{justify-content:flex-start}
+      .grid{grid-template-columns:1fr}
+      .summary,.insightGrid,.subgrid{grid-template-columns:1fr}
+      .hero h2{font-size:24px}
+      .questionText{font-size:18px}
+      .scale{grid-template-columns:1fr 1fr}
+      .scale button{min-height:54px}
+      .nav{flex-direction:column}
+      .nav .btn{width:100%}
+    }
+    @media print{
+      body{background:#fff;color:#111}
+      .app,.shell{width:100%;margin:0;padding:0}
+      .topbar,.toolbar,.quizPanel,.historyPanel,.copyPanel,.helpPanel{display:none!important}
+      .results{display:block!important}
+      .panel{box-shadow:none;border:none}
+      .sectionTitle,.reportMeta,.footnote{color:#444}
+      .scoreCard,.insight,details{break-inside:avoid}
+      a{text-decoration:none}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="shell">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo"></div>
+          <div>
+            <h1>Big Five 大五人格测试</h1>
+            <p>基于 IPIP-NEO-60 的单文件测试与结果报告</p>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button class="btn" id="btnResume" type="button">继续上次</button>
+          <button class="btn" id="btnCopy" type="button">复制摘要</button>
+          <button class="btn" id="btnImage" type="button">下载长图</button>
+          <button class="btn" id="btnPdf" type="button">导出 PDF</button>
+          <button class="btn ghost" id="btnReset" type="button">重做</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <section class="panel quizPanel">
+          <div class="hero">
+            <h2>Big Five 大五人格测试</h2>
+            <p>Big Five（大五人格）是人格心理学里最常用、实证积累最扎实的性格模型之一。和常见的 16 型人格相比，它更适合做连续测量、群体比较和重复研究。</p>
+            <p>做完 60 题后，会生成一份能转发的报告。结果会保存在本地，也可以导出长图或打印成 PDF。</p>
+            <div class="subgrid">
+              <div class="mini"><div class="k">题目</div><div class="v">60</div></div>
+              <div class="mini"><div class="k">维度</div><div class="v">5</div></div>
+              <div class="mini"><div class="k">导出</div><div class="v">PNG / PDF</div></div>
+              <div class="mini"><div class="k">模式</div><div class="v">单文件</div></div>
+            </div>
+          </div>
+          <div class="body">
+            <div class="progressWrap">
+              <div class="questionMeta">
+                <span id="progressText">未开始</span>
+                <span id="draftText"></span>
+              </div>
+              <div class="progressLine"><div class="progressBar" id="progressBar"></div></div>
+            </div>
+          </div>
+          <div class="questionCard" id="questionCard">
+            <p class="questionMeta"><span id="domainBadge"></span><span id="questionIndex"></span></p>
+            <p class="questionText" id="questionText">点击“开始测试”进入。</p>
+            <p class="questionSub" id="questionSub">结果会自动保存为本地记录。</p>
+            <div class="scale" id="scale"></div>
+            <div class="nav">
+              <button class="btn" id="btnPrev" type="button">上一步</button>
+              <button class="btn primary" id="btnNext" type="button">开始测试</button>
+            </div>
+          </div>
+        </section>
+
+        <aside class="panel rightStack">
+          <div class="head">
+            <div class="sectionTitle">最近结果</div>
+            <div class="status" id="lastStatus">还没有结果。</div>
+          </div>
+          <div class="body historyList" id="historyList"></div>
+          <div class="body helpPanel">
+            <div class="sectionTitle">说明</div>
+            <p class="footnote">
+              这是一个本地运行的自测页面，不上传你的答题内容。导出的长图适合直接发到聊天软件，PDF 适合存档。
+            </p>
+            <p class="footnote">
+              手机端如果在如流里点不开 `html`，通常不是页面坏了，而是聊天软件对本地网页文件支持有限。最稳的方式是把同一份页面放到一个可访问的网页地址，再把链接发出去；本文件仍可作为离线版保留。
+            </p>
+          </div>
+        </aside>
+      </div>
+
+      <section class="results panel" id="results">
+        <div class="reportHero">
+          <div class="reportTop">
+            <div>
+              <h2 class="reportTitle">你的 Big Five 报告</h2>
+              <div class="reportMeta" id="reportMeta"></div>
+            </div>
+            <div class="toolbar">
+              <button class="btn good" id="btnCopyShare" type="button">复制转发文案</button>
+              <button class="btn" id="btnDownloadJson" type="button">下载 JSON</button>
+            </div>
+          </div>
+          <div class="summary" id="summaryCards"></div>
+        </div>
+
+        <div class="body">
+          <div class="sectionTitle">解读</div>
+          <div class="insightGrid" id="insightGrid"></div>
+        </div>
+
+        <div class="body">
+          <div class="sectionTitle">详细明细</div>
+          <div class="detailList" id="detailList"></div>
+        </div>
+
+        <div class="body copyPanel">
+          <div class="sectionTitle">可转发摘要</div>
+          <textarea class="copyBox" id="shareText" readonly></textarea>
+          <p class="footnote">你可以直接复制这段文字发到微信、飞书、如流。</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const SCALE_LABELS = [
+      "非常不符合",
+      "比较不符合",
+      "一般",
+      "比较符合",
+      "非常符合"
+    ];
+
+    const DOMAIN_META = {
+      O: { name: "开放性", color: "#38bdf8", short: "O", desc: "好奇心、想象力、新事物接受度" },
+      C: { name: "尽责性", color: "#34d399", short: "C", desc: "自律、可靠、组织与执行" },
+      E: { name: "外向性", color: "#f59e0b", short: "E", desc: "热情、社交、活力" },
+      A: { name: "宜人性", color: "#22d3ee", short: "A", desc: "信任、利他、合作" },
+      N: { name: "神经质", color: "#fb7185", short: "N", desc: "焦虑、压力感、情绪波动" }
+    };
+
+    const ITEMS = [
+      { id: 1, domain: "N", reverse: false, text: "容易为各种事情担心。", source: "Worry about things." },
+      { id: 2, domain: "N", reverse: false, text: "很容易感到压力大。", source: "Get stressed out easily." },
+      { id: 3, domain: "N", reverse: false, text: "容易生气。", source: "Get angry easily." },
+      { id: 4, domain: "N", reverse: false, text: "容易发脾气。", source: "Lose my temper." },
+      { id: 5, domain: "N", reverse: false, text: "经常情绪低落。", source: "Often feel blue." },
+      { id: 6, domain: "N", reverse: false, text: "不太喜欢自己。", source: "Dislike myself." },
+      { id: 7, domain: "N", reverse: false, text: "不太容易主动接近别人。", source: "Find it difficult to approach others." },
+      { id: 8, domain: "N", reverse: false, text: "容易感到被人压住。", source: "Am easily intimidated." },
+      { id: 9, domain: "N", reverse: true, text: "很少放纵自己。", source: "Rarely overindulge." },
+      { id: 10, domain: "N", reverse: true, text: "能控制自己的欲望。", source: "Am able to control my cravings." },
+      { id: 11, domain: "N", reverse: true, text: "压力下仍能保持冷静。", source: "Remain calm under pressure." },
+      { id: 12, domain: "N", reverse: true, text: "即使在紧张情况下也很冷静。", source: "Am calm even in tense situations." },
+      { id: 13, domain: "E", reverse: false, text: "很容易交到朋友。", source: "Make friends easily." },
+      { id: 14, domain: "E", reverse: false, text: "和别人相处时很自在。", source: "Act comfortably with others." },
+      { id: 15, domain: "E", reverse: false, text: "喜欢热闹的大型聚会。", source: "Love large parties." },
+      { id: 16, domain: "E", reverse: true, text: "避免人多的场合。", source: "Avoid crowds." },
+      { id: 17, domain: "E", reverse: false, text: "喜欢并能够掌控局面。", source: "Take charge." },
+      { id: 18, domain: "E", reverse: false, text: "会主动尝试带领别人。", source: "Try to lead others." },
+      { id: 19, domain: "E", reverse: false, text: "总是很忙碌。", source: "Am always busy." },
+      { id: 20, domain: "E", reverse: false, text: "总是停不下来，喜欢忙个不停。", source: "Am always on the go." },
+      { id: 21, domain: "E", reverse: false, text: "喜欢刺激。", source: "Love excitement." },
+      { id: 22, domain: "E", reverse: false, text: "喜欢冒险和新鲜体验。", source: "Seek adventure." },
+      { id: 23, domain: "E", reverse: false, text: "常常玩得很开心。", source: "Have a lot of fun." },
+      { id: 24, domain: "E", reverse: false, text: "热爱生活。", source: "Love life." },
+      { id: 25, domain: "O", reverse: false, text: "想象力很丰富。", source: "Have a vivid imagination." },
+      { id: 26, domain: "O", reverse: false, text: "喜欢天马行空地幻想。", source: "Love to daydream." },
+      { id: 27, domain: "O", reverse: false, text: "认为艺术很重要。", source: "Believe in the importance of art." },
+      { id: 28, domain: "O", reverse: true, text: "不喜欢艺术。", source: "Do not like art." },
+      { id: 29, domain: "O", reverse: false, text: "情绪体验很强烈。", source: "Experience my emotions intensely." },
+      { id: 30, domain: "O", reverse: true, text: "不容易被情绪影响。", source: "Am not easily affected by my emotions." },
+      { id: 31, domain: "O", reverse: true, text: "更喜欢待在熟悉的事物里。", source: "Prefer to stick with things that I know." },
+      { id: 32, domain: "O", reverse: true, text: "不喜欢变化这个想法。", source: "Don't like the idea of change." },
+      { id: 33, domain: "O", reverse: true, text: "会回避哲学讨论。", source: "Avoid philosophical discussions." },
+      { id: 34, domain: "O", reverse: true, text: "对理论讨论不太感兴趣。", source: "Am not interested in theoretical discussions." },
+      { id: 35, domain: "O", reverse: false, text: "倾向支持更开放的政治候选人。", source: "Tend to vote for liberal political candidates." },
+      { id: 36, domain: "O", reverse: true, text: "相信唯一正确的宗教。", source: "Believe in one true religion." },
+      { id: 37, domain: "A", reverse: false, text: "信任别人。", source: "Trust others." },
+      { id: 38, domain: "A", reverse: false, text: "相信别人多半是善意的。", source: "Believe that others have good intentions." },
+      { id: 39, domain: "A", reverse: true, text: "为了领先会作弊。", source: "Cheat to get ahead." },
+      { id: 40, domain: "A", reverse: true, text: "会利用别人。", source: "Take advantage of others." },
+      { id: 41, domain: "A", reverse: false, text: "喜欢帮助别人。", source: "Love to help others." },
+      { id: 42, domain: "A", reverse: false, text: "关心他人。", source: "Am concerned about others." },
+      { id: 43, domain: "A", reverse: true, text: "会侮辱别人。", source: "Insult people." },
+      { id: 44, domain: "A", reverse: true, text: "会报复别人。", source: "Get back at others." },
+      { id: 45, domain: "A", reverse: true, text: "觉得自己比别人更优秀。", source: "Believe that I am better than others." },
+      { id: 46, domain: "A", reverse: true, text: "对自己评价很高。", source: "Think highly of myself." },
+      { id: 47, domain: "A", reverse: false, text: "会同情无家可归的人。", source: "Sympathize with the homeless." },
+      { id: 48, domain: "A", reverse: false, text: "会同情那些处境比我更差的人。", source: "Feel sympathy for those who are worse off than myself." },
+      { id: 49, domain: "C", reverse: false, text: "处理任务很顺手。", source: "Handle tasks smoothly." },
+      { id: 50, domain: "C", reverse: false, text: "知道如何把事情做成。", source: "Know how to get things done." },
+      { id: 51, domain: "C", reverse: false, text: "喜欢有条理。", source: "Like order." },
+      { id: 52, domain: "C", reverse: true, text: "房间里常常乱糟糟的。", source: "Leave a mess in my room." },
+      { id: 53, domain: "C", reverse: false, text: "说实话。", source: "Tell the truth." },
+      { id: 54, domain: "C", reverse: true, text: "轻易违背承诺。", source: "Break my promises." },
+      { id: 55, domain: "C", reverse: false, text: "努力工作。", source: "Work hard." },
+      { id: 56, domain: "C", reverse: false, text: "对自己和别人都要求很高。", source: "Set high standards for myself and others." },
+      { id: 57, domain: "C", reverse: false, text: "能执行自己的计划。", source: "Carry out my plans." },
+      { id: 58, domain: "C", reverse: true, text: "开始做事有困难。", source: "Have difficulty starting tasks." },
+      { id: 59, domain: "C", reverse: true, text: "容易草率做决定。", source: "Make rash decisions." },
+      { id: 60, domain: "C", reverse: true, text: "做事不太先思考。", source: "Act without thinking." }
+    ];
+
+    const state = {
+      started: false,
+      index: 0,
+      answers: Array(ITEMS.length).fill(null),
+      result: null
+    };
+
+    const el = (id) => document.getElementById(id);
+    const progressText = el("progressText");
+    const draftText = el("draftText");
+    const progressBar = el("progressBar");
+    const questionText = el("questionText");
+    const questionSub = el("questionSub");
+    const questionIndex = el("questionIndex");
+    const domainBadge = el("domainBadge");
+    const scale = el("scale");
+    const btnPrev = el("btnPrev");
+    const btnNext = el("btnNext");
+    const results = el("results");
+    const summaryCards = el("summaryCards");
+    const insightGrid = el("insightGrid");
+    const detailList = el("detailList");
+    const shareText = el("shareText");
+    const reportMeta = el("reportMeta");
+    const historyList = el("historyList");
+    const lastStatus = el("lastStatus");
+
+    const draftKey = "big5_draft_v1";
+    const historyKey = "big5_history_v1";
+
+    function formatDate(ts){
+      return new Intl.DateTimeFormat("zh-CN",{
+        dateStyle:"medium",
+        timeStyle:"short"
+      }).format(new Date(ts));
+    }
+
+    function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+
+    function loadDraft(){
+      try{
+        const raw = localStorage.getItem(draftKey);
+        if(!raw) return null;
+        const data = JSON.parse(raw);
+        if(!data || !Array.isArray(data.answers)) return null;
+        return data;
+      }catch{
+        return null;
+      }
+    }
+
+    function saveDraft(){
+      const draft = {
+        index: state.index,
+        started: state.started,
+        answers: state.answers,
+        updatedAt: Date.now()
+      };
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+      updateDraftText();
+    }
+
+    function clearDraft(){
+      localStorage.removeItem(draftKey);
+      updateDraftText();
+    }
+
+    function updateDraftText(){
+      const draft = loadDraft();
+      draftText.textContent = draft ? `草稿已保存 · ${formatDate(draft.updatedAt)}` : "";
+    }
+
+    function loadHistory(){
+      try{
+        const raw = localStorage.getItem(historyKey);
+        return raw ? JSON.parse(raw) : [];
+      }catch{
+        return [];
+      }
+    }
+
+    function saveHistory(entry){
+      const history = loadHistory();
+      history.unshift(entry);
+      localStorage.setItem(historyKey, JSON.stringify(history.slice(0, 8)));
+    }
+
+    function scoreFromAnswer(value, reverse){
+      return reverse ? (6 - value) : value;
+    }
+
+    function computeResult(){
+      const totals = { O: [], C: [], E: [], A: [], N: [] };
+      const detail = ITEMS.map((item, idx) => {
+        const value = state.answers[idx];
+        const scored = scoreFromAnswer(value, item.reverse);
+        totals[item.domain].push(scored);
+        return { ...item, value, scored };
+      });
+
+      const domains = Object.keys(totals).map(key => {
+        const arr = totals[key];
+        const avg = arr.reduce((a,b)=>a+b,0) / arr.length;
+        const pct = Math.round(((avg - 1) / 4) * 100);
+        return {
+          key,
+          name: DOMAIN_META[key].name,
+          color: DOMAIN_META[key].color,
+          desc: DOMAIN_META[key].desc,
+          avg: Number(avg.toFixed(2)),
+          pct: clamp(pct,0,100),
+          level: levelOf(pct)
+        };
+      });
+
+      const sorted = [...domains].sort((a,b)=>b.pct - a.pct);
+      const top = sorted[0];
+      const low = sorted[sorted.length - 1];
+
+      const shareTextValue = buildShareText(domains, top, low);
+
+      return {
+        createdAt: Date.now(),
+        domains,
+        detail,
+        top,
+        low,
+        shareText: shareTextValue
+      };
+    }
+
+    function levelOf(pct){
+      if(pct >= 67) return "高";
+      if(pct >= 34) return "中";
+      return "低";
+    }
+
+    function domainTone(domain){
+      const pct = domain.pct;
+      if(domain.key === "N"){
+        if(pct >= 67) return "压力敏感度偏高，情绪波动更容易被触发。";
+        if(pct >= 34) return "情绪反应比较均衡，能在压力和稳定之间切换。";
+        return "情绪稳定度较高，通常不容易被压力带跑。";
+      }
+      if(domain.key === "C"){
+        if(pct >= 67) return "做事有条理，执行和自我约束通常比较强。";
+        if(pct >= 34) return "有一定执行力，也会保留弹性和随机性。";
+        return "更依赖当下状态，推进任务时可能需要外部结构。";
+      }
+      if(domain.key === "E"){
+        if(pct >= 67) return "更偏向外向表达、行动感和社交能量。";
+        if(pct >= 34) return "社交和独处都能适应，能量分配比较平衡。";
+        return "更偏安静、内敛，社交能量消耗较快。";
+      }
+      if(domain.key === "A"){
+        if(pct >= 67) return "更容易信任、体谅别人，也更愿意合作。";
+        if(pct >= 34) return "在合作、边界和判断之间比较平衡。";
+        return "更看重原则和边界，表达上可能更直接。";
+      }
+      if(pct >= 67) return "更愿意接纳新观点、想法和变化。";
+      if(pct >= 34) return "对熟悉与新鲜事物都能接受。";
+      return "偏向熟悉、稳定和实用，变化成本感更强。";
+    }
+
+    function buildShareText(domains, top, low){
+      const lines = [];
+      lines.push("我的 Big Five 自测结果");
+      lines.push("");
+      domains.forEach(d => {
+        lines.push(`${d.name}：${d.pct} / 100（${d.level}）`);
+      });
+      lines.push("");
+      lines.push(`最高：${top.name}`);
+      lines.push(`最低：${low.name}`);
+      lines.push("");
+      lines.push("这是一份自我了解报告，不是诊断。");
+      return lines.join("\n");
+    }
+
+    function renderScale(selected){
+      scale.innerHTML = "";
+      SCALE_LABELS.forEach((label, idx) => {
+        const value = idx + 1;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = selected === value ? "selected" : "";
+        btn.innerHTML = `<span class="num">${value}</span><span class="lab">${label}</span>`;
+        btn.addEventListener("click", () => {
+          state.answers[state.index] = value;
+          saveDraft();
+          renderQuestion();
+        });
+        scale.appendChild(btn);
+      });
+    }
+
+    function renderQuestion(){
+      const item = ITEMS[state.index];
+      state.started = true;
+      progressText.textContent = `第 ${state.index + 1} / ${ITEMS.length} 题`;
+      progressBar.style.width = `${((state.index) / ITEMS.length) * 100}%`;
+      questionIndex.textContent = `${state.index + 1} / ${ITEMS.length}`;
+      domainBadge.innerHTML = `<span class="accent${item.domain}">${DOMAIN_META[item.domain].short}</span> · ${DOMAIN_META[item.domain].name}`;
+      questionText.textContent = item.text;
+      questionSub.textContent = `题目来源：${item.source} · 选项越靠右，表示越符合你。`;
+      const existing = state.answers[state.index];
+      renderScale(existing);
+      btnPrev.disabled = state.index === 0;
+      btnPrev.style.opacity = state.index === 0 ? .45 : 1;
+      btnNext.textContent = state.index === 0 && !existing ? "开始测试" : (state.index === ITEMS.length - 1 ? "提交结果" : "下一题");
+      if(existing == null){
+        btnNext.disabled = true;
+        btnNext.style.opacity = .6;
+      }else{
+        btnNext.disabled = false;
+        btnNext.style.opacity = 1;
+      }
+      saveDraft();
+    }
+
+    function renderStart(){
+      progressText.textContent = "未开始";
+      progressBar.style.width = "0%";
+      questionIndex.textContent = "";
+      domainBadge.textContent = "IPIP-NEO-60";
+      questionText.textContent = "点击“开始测试”进入。";
+      questionSub.textContent = "结果会自动保存为本地记录。";
+      renderScale(null);
+      btnPrev.disabled = true;
+      btnPrev.style.opacity = .45;
+      btnNext.textContent = "开始测试";
+      btnNext.disabled = false;
+      btnNext.style.opacity = 1;
+    }
+
+    function nextStep(){
+      if(!state.started){
+        state.started = true;
+        state.index = 0;
+        renderQuestion();
+        return;
+      }
+      if(state.answers[state.index] == null) return;
+      if(state.index < ITEMS.length - 1){
+        state.index += 1;
+        renderQuestion();
+      }else{
+        submit();
+      }
+    }
+
+    function prevStep(){
+      if(state.index > 0){
+        state.index -= 1;
+        renderQuestion();
+      }
+    }
+
+    function submit(){
+      if(state.answers.some(v => v == null)){
+        const missing = state.answers.findIndex(v => v == null);
+        state.index = missing;
+        renderQuestion();
+        return;
+      }
+      const result = computeResult();
+      state.result = result;
+      localStorage.setItem("big5_last_result_v1", JSON.stringify(result));
+      saveHistory(result);
+      clearDraft();
+      renderResult(result);
+    }
+
+    function renderResult(result){
+      results.classList.add("show");
+      reportMeta.textContent = `完成时间：${formatDate(result.createdAt)} · IPIP-NEO-60 · 本地生成`;
+      const cards = result.domains.map(d => `
+        <div class="scoreCard">
+          <div class="name"><span class="accent${d.key}">${d.name}</span><span>${d.level}</span></div>
+          <div class="score">${d.pct}</div>
+          <div class="bar"><i style="width:${d.pct}%;background:${d.color}"></i></div>
+          <div class="barLabel">${d.desc}</div>
+        </div>
+      `).join("");
+      summaryCards.innerHTML = cards;
+
+      insightGrid.innerHTML = result.domains.map(d => `
+        <div class="insight">
+          <h3 class="accent${d.key}">${d.name}</h3>
+          <p>${domainTone(d)} 当前分数为 <strong>${d.pct}</strong>，属于 <strong>${d.level}</strong> 区间。</p>
+        </div>
+      `).join("");
+
+      detailList.innerHTML = result.domains.map(d => {
+        const list = result.detail.filter(i => i.domain === d.key);
+        const rows = list.map(item => `
+          <tr>
+            <td>${item.id}</td>
+            <td>${item.text}</td>
+            <td>${item.value}</td>
+            <td>${item.reverse ? "是" : "否"}</td>
+            <td>${item.scored}</td>
+          </tr>
+        `).join("");
+        return `
+          <details ${d.key === "O" ? "open" : ""}>
+            <summary><span class="accent${d.key}">${d.name}</span> · ${d.pct} / 100 · ${d.level}</summary>
+            <table class="detailTable">
+              <thead>
+                <tr><th>#</th><th>题目</th><th>作答</th><th>反向</th><th>计分后</th></tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </details>
+        `;
+      }).join("");
+
+      shareText.value = result.shareText;
+      renderHistory();
+      results.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function renderHistory(){
+      const history = loadHistory();
+      if(!history.length){
+        lastStatus.textContent = "还没有结果。";
+        historyList.innerHTML = "";
+        return;
+      }
+      lastStatus.textContent = `已保存 ${history.length} 份结果。`;
+      historyList.innerHTML = history.map((item, idx) => {
+        const top = item.domains.slice().sort((a,b)=>b.pct-a.pct)[0];
+        return `
+          <div class="historyItem">
+            <div>
+              <div><strong>${formatDate(item.createdAt)}</strong></div>
+              <div class="small">最高维度：${top.name} ${top.pct}</div>
+            </div>
+            <button class="btn" type="button" data-history="${idx}">读取</button>
+          </div>
+        `;
+      }).join("");
+      historyList.querySelectorAll("[data-history]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const history = loadHistory();
+          const item = history[Number(btn.dataset.history)];
+          if(item){
+            state.result = item;
+            renderResult(item);
+          }
+        });
+      });
+    }
+
+    function copyText(text){
+      if(navigator.clipboard?.writeText){
+        return navigator.clipboard.writeText(text);
+      }
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      return Promise.resolve();
+    }
+
+    function wrapText(ctx, text, maxWidth){
+      const words = text.split("");
+      const lines = [];
+      let line = "";
+      for(const ch of words){
+        const test = line + ch;
+        if(ctx.measureText(test).width > maxWidth && line){
+          lines.push(line);
+          line = ch;
+        }else{
+          line = test;
+        }
+      }
+      if(line) lines.push(line);
+      return lines;
+    }
+
+    function drawTextBlock(ctx, text, x, y, width, opts = {}){
+      const {
+        size = 28,
+        weight = 400,
+        color = "#e5eefb",
+        lineHeight = Math.round(size * 1.55),
+        maxLines = Infinity
+      } = opts;
+      ctx.save();
+      ctx.font = `${weight} ${size}px -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif`;
+      ctx.fillStyle = color;
+      const lines = [];
+      text.split("\n").forEach(par => {
+        if(!par){
+          lines.push("");
+          return;
+        }
+        lines.push(...wrapText(ctx, par, width));
+      });
+      const clipped = lines.slice(0, maxLines);
+      clipped.forEach((line, idx) => {
+        ctx.fillText(line, x, y + idx * lineHeight);
+      });
+      ctx.restore();
+      return y + clipped.length * lineHeight;
+    }
+
+    function renderReportCanvas(result){
+      const width = 1400;
+      const pad = 72;
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = width;
+      canvas.height = 8000;
+
+      let y = pad;
+      const contentWidth = width - pad * 2;
+
+      // Pre-calc approximate height by drawing into the same canvas.
+      function line(text, opts){ y = drawTextBlock(ctx, text, pad, y, contentWidth, opts) + 14; }
+      function sectionTitle(text){
+        ctx.fillStyle = "#cbd5e1";
+        ctx.font = "700 26px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.fillText(text, pad, y);
+        y += 18;
+      }
+      function cardBox(drawFn, height){
+        const boxY = y;
+        ctx.save();
+        ctx.fillStyle = "rgba(255,255,255,0.04)";
+        ctx.strokeStyle = "rgba(148,163,184,0.18)";
+        ctx.lineWidth = 2;
+        roundRect(ctx, pad, boxY, contentWidth, height, 26);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+        drawFn(boxY + 28);
+        y = boxY + height + 18;
+      }
+      function scoreBar(x, yy, w, pct, color){
+        ctx.fillStyle = "rgba(255,255,255,0.08)";
+        roundRect(ctx, x, yy, w, 18, 9);
+        ctx.fill();
+        ctx.fillStyle = color;
+        roundRect(ctx, x, yy, Math.max(14, w * pct / 100), 18, 9);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(0,0,width,canvas.height);
+      ctx.fillStyle = "#e5eefb";
+      ctx.font = "800 44px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText("Big Five 报告", pad, y);
+      y += 58;
+      y = drawTextBlock(ctx, `完成时间：${formatDate(result.createdAt)} · IPIP-NEO-60 · 本地生成`, pad, y, contentWidth, { size: 22, color: "#8fa3bf" }) + 12;
+
+      cardBox((topY) => {
+        ctx.fillStyle = "#8fa3bf";
+        ctx.font = "600 20px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.fillText("总体分数", pad + 28, topY);
+        const colW = (contentWidth - 56) / 5;
+        result.domains.forEach((d, idx) => {
+          const x = pad + 28 + idx * colW;
+          ctx.fillStyle = "#e5eefb";
+          ctx.font = "800 34px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+          ctx.fillText(String(d.pct), x, topY + 48);
+          ctx.fillStyle = d.color;
+          scoreBar(x, topY + 66, colW - 24, d.pct, d.color);
+          ctx.fillStyle = "#94a3b8";
+          ctx.font = "600 18px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+          ctx.fillText(d.name, x, topY + 112);
+        });
+      }, 170);
+
+      sectionTitle("解读");
+      y += 20;
+      result.domains.forEach(d => {
+        cardBox((topY) => {
+          ctx.fillStyle = d.color;
+          ctx.font = "800 24px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+          ctx.fillText(`${d.name} · ${d.pct} / 100 · ${d.level}`, pad + 28, topY);
+          y = drawTextBlock(ctx, domainTone(d), pad + 28, topY + 38, contentWidth - 56, { size: 22, color: "#dbe7f7", lineHeight: 34 }) + 0;
+        }, 128);
+      });
+
+      sectionTitle("可转发摘要");
+      y += 20;
+      cardBox((topY) => {
+        let yy = topY;
+        result.domains.forEach(d => {
+          ctx.fillStyle = "#e5eefb";
+          ctx.font = "700 22px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+          ctx.fillText(`${d.name}`, pad + 28, yy);
+          ctx.fillStyle = d.color;
+          ctx.font = "800 24px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+          ctx.fillText(`${d.pct}`, pad + 250, yy);
+          yy += 34;
+        });
+      }, 240);
+
+      sectionTitle("详细明细");
+      y += 20;
+      result.domains.forEach(d => {
+        const rows = result.detail.filter(i => i.domain === d.key);
+        const boxH = 90 + rows.length * 32;
+        cardBox((topY) => {
+          ctx.fillStyle = d.color;
+          ctx.font = "800 22px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+          ctx.fillText(`${d.name}`, pad + 28, topY);
+          ctx.fillStyle = "#8fa3bf";
+          ctx.font = "600 18px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+          ctx.fillText("题号 / 题目 / 作答 / 计分", pad + 28, topY + 30);
+          let yy = topY + 64;
+          rows.forEach(item => {
+            ctx.fillStyle = "#e5eefb";
+            ctx.font = "500 18px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+            const text = `${item.id}. ${item.text} · ${item.value} · ${item.scored}`;
+            const lines = wrapText(ctx, text, contentWidth - 56);
+            lines.slice(0, 2).forEach((ln, i) => ctx.fillText(ln, pad + 28, yy + i * 24));
+            yy += 30 + (lines.length - 1) * 24;
+          });
+        }, boxH);
+      });
+
+      const usedHeight = Math.ceil(y + pad);
+      const finalCanvas = document.createElement("canvas");
+      finalCanvas.width = width;
+      finalCanvas.height = usedHeight;
+      const finalCtx = finalCanvas.getContext("2d");
+      finalCtx.drawImage(canvas, 0, 0, width, usedHeight, 0, 0, width, usedHeight);
+      return finalCanvas;
+    }
+
+    function roundRect(ctx, x, y, w, h, r){
+      const rr = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rr, y);
+      ctx.arcTo(x + w, y, x + w, y + h, rr);
+      ctx.arcTo(x + w, y + h, x, y + h, rr);
+      ctx.arcTo(x, y + h, x, y, rr);
+      ctx.arcTo(x, y, x + w, y, rr);
+      ctx.closePath();
+    }
+
+    async function downloadLongImage(){
+      if(!state.result) return;
+      const canvas = renderReportCanvas(state.result);
+      canvas.toBlob((blob) => {
+        if(!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `big5-report-${new Date(state.result.createdAt).toISOString().slice(0,10)}.png`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      }, "image/png");
+    }
+
+    function openPrintWindow(){
+      if(!state.result) return;
+      const r = state.result;
+      const html = `
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Big5 报告</title>
+  <style>
+    @page { size: A4; margin: 14mm; }
+    body { margin:0; font: 15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; color:#111; background:#fff; }
+    .page { padding:0 0 18px; }
+    h1 { margin:0 0 6px; font-size:28px; }
+    .meta { color:#555; margin-bottom:14px; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .card { border:1px solid #ddd; border-radius:12px; padding:12px; break-inside:avoid; }
+    .score { font-size:26px; font-weight:800; }
+    .bar { height:10px; background:#eceff5; border-radius:999px; overflow:hidden; margin:8px 0; }
+    .bar i { display:block; height:100%; border-radius:inherit; }
+    .section { margin-top:14px; }
+    .domain { margin-top:10px; border:1px solid #ddd; border-radius:12px; padding:12px; break-inside:avoid; }
+    .domain h3 { margin:0 0 6px; }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    th,td { text-align:left; padding:5px 4px; border-bottom:1px solid #eee; vertical-align:top; }
+    th { color:#555; }
+    .small { color:#555; font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Big Five 报告</h1>
+    <div class="meta">完成时间：${formatDate(r.createdAt)} · IPIP-NEO-60 · 本地生成</div>
+    <div class="grid">
+      ${r.domains.map(d => `
+        <div class="card">
+          <div><strong>${d.name}</strong> · ${d.level}</div>
+          <div class="score">${d.pct}</div>
+          <div class="bar"><i style="width:${d.pct}%;background:${d.color}"></i></div>
+          <div class="small">${d.desc}</div>
+        </div>
+      `).join("")}
+    </div>
+    <div class="section">
+      ${r.domains.map(d => `
+        <div class="domain">
+          <h3>${d.name} · ${d.pct} / 100</h3>
+          <div>${domainTone(d)}</div>
+          <table>
+            <thead><tr><th>#</th><th>题目</th><th>答题</th><th>计分</th></tr></thead>
+            <tbody>
+              ${r.detail.filter(i => i.domain === d.key).map(item => `
+                <tr><td>${item.id}</td><td>${item.text}</td><td>${item.value}</td><td>${item.scored}</td></tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `).join("")}
+    </div>
+  </div>
+  <script>
+    setTimeout(() => window.print(), 250);
+  <\/script>
+</body>
+</html>`;
+      const w = window.open("", "_blank");
+      if(!w){
+        alert("浏览器拦截了打印窗口，请允许弹窗后重试。");
+        return;
+      }
+      w.document.open();
+      w.document.write(html);
+      w.document.close();
+    }
+
+    function downloadJson(){
+      if(!state.result) return;
+      const blob = new Blob([JSON.stringify(state.result, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `big5-report-${new Date(state.result.createdAt).toISOString().slice(0,10)}.json`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+
+    function resetAll(){
+      if(!confirm("确认清空当前答案和结果吗？")) return;
+      state.started = false;
+      state.index = 0;
+      state.answers = Array(ITEMS.length).fill(null);
+      state.result = null;
+      results.classList.remove("show");
+      renderStart();
+      clearDraft();
+    }
+
+    function restoreFromDraftOrHistory(){
+      const draft = loadDraft();
+      if(draft?.answers?.length === ITEMS.length){
+        state.started = !!draft.started;
+        state.index = clamp(draft.index ?? 0, 0, ITEMS.length - 1);
+        state.answers = draft.answers.slice();
+        if(state.started){
+          renderQuestion();
+          return;
+        }
+      }
+      renderStart();
+      renderHistory();
+      const last = localStorage.getItem("big5_last_result_v1");
+      if(last){
+        try{
+          const result = JSON.parse(last);
+          state.result = result;
+          renderResult(result);
+        }catch{}
+      }
+    }
+
+    btnPrev.addEventListener("click", prevStep);
+    btnNext.addEventListener("click", nextStep);
+    el("btnCopy").addEventListener("click", () => {
+      const txt = state.result ? state.result.shareText : "请先完成测试。";
+      copyText(txt).then(() => alert("摘要已复制。"));
+    });
+    el("btnCopyShare").addEventListener("click", () => {
+      copyText(state.result?.shareText || "").then(() => alert("转发文案已复制。"));
+    });
+    el("btnImage").addEventListener("click", downloadLongImage);
+    el("btnPdf").addEventListener("click", openPrintWindow);
+    el("btnDownloadJson").addEventListener("click", downloadJson);
+    el("btnReset").addEventListener("click", resetAll);
+    el("btnResume").addEventListener("click", () => {
+      const draft = loadDraft();
+      if(!draft){
+        alert("没有可继续的草稿。");
+        return;
+      }
+      state.started = true;
+      state.index = clamp(draft.index ?? 0, 0, ITEMS.length - 1);
+      state.answers = draft.answers.slice();
+      renderQuestion();
+    });
+
+    updateDraftText();
+    restoreFromDraftOrHistory();
+  </script>
+</body>
+</html>
