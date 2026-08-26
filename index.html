@@ -121,6 +121,37 @@
       line-height:1.15;
     }
     .hero p{margin:0;color:var(--muted)}
+    .identityRow{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:12px;
+      align-items:end;
+    }
+    .identityField label{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin:0 0 6px;
+    }
+    .identityInput{
+      width:100%;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      padding:12px 14px;
+      outline:none;
+    }
+    .identityInput:focus{
+      border-color:rgba(56,189,248,.5);
+      box-shadow:0 0 0 3px rgba(56,189,248,.12);
+    }
+    .identityHint{
+      color:var(--muted);
+      font-size:12px;
+      max-width:240px;
+      line-height:1.45;
+    }
     .subgrid{
       display:grid;
       grid-template-columns:repeat(4,minmax(0,1fr));
@@ -167,10 +198,25 @@
       font-weight:650;
       margin:0;
     }
+    .questionEn{
+      margin:0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.45;
+    }
     .questionSub{
       color:var(--muted);
       margin:0;
       font-size:13px;
+    }
+    .completionNote{
+      border:1px solid rgba(52,211,153,.25);
+      background:rgba(52,211,153,.08);
+      color:var(--text);
+      border-radius:12px;
+      padding:12px 14px;
+      font-size:13px;
+      line-height:1.5;
     }
     .scale{
       display:grid;
@@ -231,7 +277,7 @@
     .reportMeta{color:var(--muted);font-size:13px}
     .summary{
       display:grid;
-      grid-template-columns:repeat(5,minmax(0,1fr));
+      grid-template-columns:repeat(6,minmax(0,1fr));
       gap:10px;
     }
     .scoreCard{
@@ -242,6 +288,11 @@
       min-height:102px;
       display:grid;
       gap:8px;
+    }
+    .scoreCard.personaSummary{
+      background:linear-gradient(180deg, rgba(56,189,248,.14), rgba(255,255,255,.03));
+      border-color:rgba(56,189,248,.22);
+      min-height:132px;
     }
     .scoreCard .name{display:flex;justify-content:space-between;gap:6px;align-items:center}
     .scoreCard .name span{font-weight:700}
@@ -270,6 +321,53 @@
       font-size:16px;
     }
     .insight p{margin:0;color:var(--text)}
+    .personaGrid{
+      display:grid;
+      grid-template-columns:repeat(5,minmax(0,1fr));
+      gap:10px;
+    }
+    .personaCard{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:12px;
+      padding:12px;
+      display:grid;
+      gap:8px;
+      min-height:128px;
+    }
+    .personaIcon{
+      width:40px;height:40px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      color:#fff;
+      font-size:20px;
+      font-weight:800;
+    }
+    .personaTitle{font-weight:700}
+    .personaMeta{color:var(--muted);font-size:12px;line-height:1.45}
+    .qrWrap{
+      display:grid;
+      grid-template-columns:132px minmax(0,1fr);
+      gap:12px;
+      align-items:center;
+    }
+    .qrBox{
+      width:132px;
+      min-height:132px;
+      padding:10px;
+      background:#fff;
+      border-radius:12px;
+    }
+    .qrBox canvas,.qrBox img{width:100%;height:100%;display:block}
+    .shareCard{
+      display:grid;
+      gap:8px;
+    }
+    .shareCard .smallTitle{
+      font-size:14px;
+      font-weight:700;
+    }
     .sectionTitle{
       margin:0 0 12px;
       font-size:18px;
@@ -318,6 +416,7 @@
       white-space:pre-wrap;
     }
     .hidden{display:none!important}
+    .subgrid.hidden{display:none}
     .status{
       color:var(--muted);
       font-size:13px;
@@ -348,7 +447,8 @@
       .topbar{flex-direction:column;align-items:stretch}
       .toolbar{justify-content:flex-start}
       .grid{grid-template-columns:1fr}
-      .summary,.insightGrid,.subgrid{grid-template-columns:1fr}
+      .summary,.insightGrid,.subgrid,.personaGrid{grid-template-columns:1fr}
+      .identityRow,.qrWrap{grid-template-columns:1fr}
       .hero h2{font-size:24px}
       .questionText{font-size:18px}
       .scale{grid-template-columns:1fr 1fr}
@@ -380,11 +480,11 @@
           </div>
         </div>
         <div class="toolbar">
-          <button class="btn" id="btnResume" type="button">继续上次</button>
-          <button class="btn" id="btnCopy" type="button">复制摘要</button>
-          <button class="btn" id="btnImage" type="button">下载长图</button>
-          <button class="btn" id="btnPdf" type="button">导出 PDF</button>
-          <button class="btn ghost" id="btnReset" type="button">重做</button>
+          <button class="btn hidden" id="btnResume" type="button">继续上次</button>
+          <button class="btn hidden" id="btnCopy" type="button">复制摘要</button>
+          <button class="btn hidden" id="btnImage" type="button">下载长图</button>
+          <button class="btn hidden" id="btnPdf" type="button">导出 PDF</button>
+          <button class="btn ghost hidden" id="btnReset" type="button">重做</button>
         </div>
       </div>
 
@@ -393,13 +493,15 @@
           <div class="hero">
             <h2>Big Five 大五人格测试</h2>
             <p>Big Five（大五人格）是人格心理学里最常用、实证积累最扎实的性格模型之一。和常见的 16 型人格相比，它更适合做连续测量、群体比较和重复研究。</p>
-            <p>做完 60 题后，会生成一份能转发的报告。结果会保存在本地，也可以导出长图或打印成 PDF。</p>
-            <div class="subgrid">
-              <div class="mini"><div class="k">题目</div><div class="v">60</div></div>
-              <div class="mini"><div class="k">维度</div><div class="v">5</div></div>
-              <div class="mini"><div class="k">导出</div><div class="v">PNG / PDF</div></div>
-              <div class="mini"><div class="k">模式</div><div class="v">单文件</div></div>
+            <p>做完 60 题后，会生成一份能转发的报告。题目同时保留中文和英文原文，结果会保存在本地，并生成 9:16 图片。</p>
+            <div class="identityRow">
+              <div class="identityField">
+                <label for="userName">昵称（必填）</label>
+                <input class="identityInput" id="userName" type="text" maxlength="24" placeholder="例如：王同学" required />
+              </div>
+              <div class="identityHint">用于报告标题和分享图。留空不允许继续。</div>
             </div>
+            <div class="subgrid hidden" aria-hidden="true"></div>
           </div>
           <div class="body">
             <div class="progressWrap">
@@ -411,9 +513,11 @@
             </div>
           </div>
           <div class="questionCard" id="questionCard">
-            <p class="questionMeta"><span id="domainBadge"></span><span id="questionIndex"></span></p>
+            <p class="questionMeta"><span id="questionIndex"></span></p>
             <p class="questionText" id="questionText">点击“开始测试”进入。</p>
+            <p class="questionEn" id="questionEn"></p>
             <p class="questionSub" id="questionSub">结果会自动保存为本地记录。</p>
+            <div class="completionNote hidden" id="completionNote">测试已完成。下面的结果页包含可转发摘要、二维码和 9:16 图片下载入口。</div>
             <div class="scale" id="scale"></div>
             <div class="nav">
               <button class="btn" id="btnPrev" type="button">上一步</button>
@@ -431,7 +535,7 @@
           <div class="body helpPanel">
             <div class="sectionTitle">说明</div>
             <p class="footnote">
-              这是一个本地运行的自测页面，不上传你的答题内容。导出的长图适合直接发到聊天软件，PDF 适合存档。
+              这是一个本地运行的自测页面，不上传你的答题内容。结果会生成一张 9:16 图片，适合直接发到聊天软件。
             </p>
             <p class="footnote">
               手机端如果在如流里点不开 `html`，通常不是页面坏了，而是聊天软件对本地网页文件支持有限。最稳的方式是把同一份页面放到一个可访问的网页地址，再把链接发出去；本文件仍可作为离线版保留。
@@ -444,36 +548,39 @@
         <div class="reportHero">
           <div class="reportTop">
             <div>
-              <h2 class="reportTitle">你的 Big Five 报告</h2>
+              <h2 class="reportTitle" id="reportTitle">你的 Big Five 报告</h2>
               <div class="reportMeta" id="reportMeta"></div>
             </div>
-            <div class="toolbar">
-              <button class="btn good" id="btnCopyShare" type="button">复制转发文案</button>
-              <button class="btn" id="btnDownloadJson" type="button">下载 JSON</button>
+            <div class="reportActions">
+              <button class="btn good" id="btnCopyShare" type="button">复制全文</button>
+              <button class="btn primary" id="btnDownloadImage" type="button">下载 9:16 图片</button>
             </div>
           </div>
           <div class="summary" id="summaryCards"></div>
         </div>
 
         <div class="body">
-          <div class="sectionTitle">解读</div>
-          <div class="insightGrid" id="insightGrid"></div>
-        </div>
-
-        <div class="body">
-          <div class="sectionTitle">详细明细</div>
-          <div class="detailList" id="detailList"></div>
+          <div class="sectionTitle">推广二维码</div>
+          <div class="qrWrap">
+            <div class="qrBox"><canvas id="qrCanvas" width="112" height="112"></canvas></div>
+            <div class="shareCard">
+              <div class="smallTitle">扫这个码，直接打开同一份测试页</div>
+              <div class="footnote" id="qrHint">二维码会指向当前访问地址。</div>
+            </div>
+          </div>
         </div>
 
         <div class="body copyPanel">
-          <div class="sectionTitle">可转发摘要</div>
+          <div class="sectionTitle">可转发全文</div>
           <textarea class="copyBox" id="shareText" readonly></textarea>
-          <p class="footnote">你可以直接复制这段文字发到微信、飞书、如流。</p>
+          <p class="footnote">你可以直接复制这段文字发到微信、飞书、如流。内容会尽量保持简洁。</p>
         </div>
       </section>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="./Big5画像库数据.js"></script>
   <script>
     const SCALE_LABELS = [
       "非常不符合",
@@ -490,6 +597,16 @@
       A: { name: "宜人性", color: "#22d3ee", short: "A", desc: "信任、利他、合作" },
       N: { name: "神经质", color: "#fb7185", short: "N", desc: "焦虑、压力感、情绪波动" }
     };
+
+    const ARCHETYPES = {
+      O: { title: "探索者", hint: "偏好新鲜、想法和变化", mark: "✦" },
+      C: { title: "执行者", hint: "偏好秩序、推进和完成", mark: "▣" },
+      E: { title: "带动者", hint: "偏好表达、行动和连接", mark: "▲" },
+      A: { title: "照应者", hint: "偏好合作、体谅和支持", mark: "♥" },
+      N: { title: "警觉者", hint: "偏好观察风险与边界", mark: "◐" }
+    };
+    const PERSONA_LIBRARY = window.BIG5_PERSONA_LIBRARY || {};
+    const PERSONA_ORDER = ["O", "C", "E", "A", "N"];
 
     const ITEMS = [
       { id: 1, domain: "N", reverse: false, text: "容易为各种事情担心。", source: "Worry about things." },
@@ -558,31 +675,46 @@
       started: false,
       index: 0,
       answers: Array(ITEMS.length).fill(null),
-      result: null
+      result: null,
+      completed: false,
+      name: "",
+      qrDataUrl: ""
     };
 
     const el = (id) => document.getElementById(id);
     const progressText = el("progressText");
     const draftText = el("draftText");
     const progressBar = el("progressBar");
+    const nameInput = el("userName");
     const questionText = el("questionText");
+    const questionEn = el("questionEn");
     const questionSub = el("questionSub");
+    const completionNote = el("completionNote");
     const questionIndex = el("questionIndex");
-    const domainBadge = el("domainBadge");
     const scale = el("scale");
     const btnPrev = el("btnPrev");
     const btnNext = el("btnNext");
     const results = el("results");
     const summaryCards = el("summaryCards");
-    const insightGrid = el("insightGrid");
-    const detailList = el("detailList");
     const shareText = el("shareText");
     const reportMeta = el("reportMeta");
     const historyList = el("historyList");
     const lastStatus = el("lastStatus");
+    const qrCanvas = el("qrCanvas");
+    const qrHint = el("qrHint");
 
     const draftKey = "big5_draft_v1";
     const historyKey = "big5_history_v1";
+
+    function syncToolbar(){
+      const hasDraft = !!loadDraft();
+      const hasResult = !!state.result;
+      el("btnResume").classList.toggle("hidden", hasResult || !hasDraft);
+      el("btnReset").classList.toggle("hidden", !hasResult && !hasDraft);
+      el("btnCopy").classList.add("hidden");
+      el("btnImage").classList.add("hidden");
+      el("btnPdf").classList.add("hidden");
+    }
 
     function formatDate(ts){
       return new Intl.DateTimeFormat("zh-CN",{
@@ -592,6 +724,32 @@
     }
 
     function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+
+    function buildPersonaCode(domains){
+      const byKey = Object.fromEntries(domains.map(d => [d.key, d.level]));
+      return PERSONA_ORDER.map(key => `${key}${byKey[key] || "中"}`).join(" ");
+    }
+
+    function lookupPersona(code){
+      return PERSONA_LIBRARY[code] || {
+        name: "待补充画像",
+        representative: "待补充",
+        explain: "这条结果的命名和代表人物还在整理中。"
+      };
+    }
+
+    function enrichResult(result){
+      if(!result || !Array.isArray(result.domains)) return result;
+      if(result.persona && result.personaCode) return result;
+      const personaCode = result.personaCode || buildPersonaCode(result.domains);
+      const persona = result.persona || lookupPersona(personaCode);
+      return {
+        ...result,
+        personaCode,
+        persona,
+        shareText: result.shareText || buildShareText({ ...result, personaCode, persona })
+      };
+    }
 
     function loadDraft(){
       try{
@@ -610,6 +768,7 @@
         index: state.index,
         started: state.started,
         answers: state.answers,
+        name: state.name,
         updatedAt: Date.now()
       };
       localStorage.setItem(draftKey, JSON.stringify(draft));
@@ -624,6 +783,59 @@
     function updateDraftText(){
       const draft = loadDraft();
       draftText.textContent = draft ? `草稿已保存 · ${formatDate(draft.updatedAt)}` : "";
+    }
+
+    function getQrDataUrl(text){
+      return new Promise((resolve, reject) => {
+        if(!window.QRCode?.toDataURL){
+          reject(new Error("QRCode unavailable"));
+          return;
+        }
+        QRCode.toDataURL(text, { width: 112, margin: 1 }, (err, url) => {
+          if(err) reject(err);
+          else resolve(url);
+        });
+      });
+    }
+
+    function renderQrCode(){
+      const url = location.href;
+      qrHint.textContent = url;
+      if(window.QRCode?.toCanvas){
+        QRCode.toCanvas(qrCanvas, url, { width: 112, margin: 1 }, (err) => {
+          if(err){
+            qrHint.textContent = "二维码生成失败，请检查网络后重试。";
+            state.qrDataUrl = "";
+            return;
+          }
+        });
+        getQrDataUrl(url).then(dataUrl => {
+          state.qrDataUrl = dataUrl;
+        }).catch(() => {
+          state.qrDataUrl = "";
+        });
+      }else{
+        qrHint.textContent = "二维码库未加载，页面仍可正常使用。";
+        state.qrDataUrl = "";
+      }
+    }
+
+    function syncNameFromInput(){
+      state.name = (nameInput.value || "").trim();
+    }
+
+    function restoreName(){
+      const draft = loadDraft();
+      const savedName = draft?.name || "";
+      const last = localStorage.getItem("big5_last_result_v1");
+      let resultName = "";
+      if(last){
+        try{
+          resultName = JSON.parse(last)?.name || "";
+        }catch{}
+      }
+      state.name = savedName || resultName || "";
+      nameInput.value = state.name;
     }
 
     function loadHistory(){
@@ -645,8 +857,14 @@
       return reverse ? (6 - value) : value;
     }
 
+    function getDisplayName(name){
+      const clean = (name || "").trim();
+      return clean || "你";
+    }
+
     function computeResult(){
       const totals = { O: [], C: [], E: [], A: [], N: [] };
+      const createdAt = Date.now();
       const detail = ITEMS.map((item, idx) => {
         const value = state.answers[idx];
         const scored = scoreFromAnswer(value, item.reverse);
@@ -672,15 +890,28 @@
       const sorted = [...domains].sort((a,b)=>b.pct - a.pct);
       const top = sorted[0];
       const low = sorted[sorted.length - 1];
+      const personaCode = buildPersonaCode(domains);
+      const persona = lookupPersona(personaCode);
 
-      const shareTextValue = buildShareText(domains, top, low);
-
-      return {
-        createdAt: Date.now(),
+      const shareTextValue = buildShareText({
+        createdAt,
         domains,
         detail,
         top,
         low,
+        personaCode,
+        persona
+      });
+
+      return {
+        createdAt,
+        name: state.name,
+        domains,
+        detail,
+        top,
+        low,
+        personaCode,
+        persona,
         shareText: shareTextValue
       };
     }
@@ -718,18 +949,44 @@
       return "偏向熟悉、稳定和实用，变化成本感更强。";
     }
 
-    function buildShareText(domains, top, low){
+    function buildShareText(result){
+      const who = getDisplayName(result.name);
       const lines = [];
-      lines.push("我的 Big Five 自测结果");
+      lines.push(`${who}的 Big Five 自测报告`);
+      lines.push(`完成时间：${formatDate(result.createdAt)} · IPIP-NEO-60`);
       lines.push("");
-      domains.forEach(d => {
+      lines.push("总览");
+      result.domains.forEach(d => {
         lines.push(`${d.name}：${d.pct} / 100（${d.level}）`);
       });
       lines.push("");
-      lines.push(`最高：${top.name}`);
-      lines.push(`最低：${low.name}`);
+      lines.push(`最高维度：${result.top.name}`);
+      lines.push(`最低维度：${result.low.name}`);
       lines.push("");
-      lines.push("这是一份自我了解报告，不是诊断。");
+      lines.push("画像");
+      lines.push(`画像名：${result.persona.name}`);
+      lines.push(`代表人物：${result.persona.representative}`);
+      lines.push(`画像码：${result.personaCode}`);
+      lines.push("");
+      lines.push("一句总评");
+      lines.push(result.persona.explain);
+      lines.push("");
+      lines.push("解读");
+      result.domains.forEach(d => {
+        lines.push(`${d.name}：${domainTone(d)}`);
+      });
+      lines.push("");
+      lines.push("明细");
+      result.domains.forEach(d => {
+        lines.push(`[${d.name}]`);
+        result.detail.filter(i => i.domain === d.key).forEach(item => {
+          lines.push(`#${item.id} ${item.text}`);
+          lines.push(`  EN: ${item.source}`);
+          lines.push(`  作答：${item.value} · 计分后：${item.scored}`);
+        });
+        lines.push("");
+      });
+      lines.push("说明：这是一份自我了解报告，不是诊断。");
       return lines.join("\n");
     }
 
@@ -751,14 +1008,19 @@
     }
 
     function renderQuestion(){
+      if(state.completed){
+        renderCompleted();
+        return;
+      }
       const item = ITEMS[state.index];
       state.started = true;
       progressText.textContent = `第 ${state.index + 1} / ${ITEMS.length} 题`;
       progressBar.style.width = `${((state.index) / ITEMS.length) * 100}%`;
       questionIndex.textContent = `${state.index + 1} / ${ITEMS.length}`;
-      domainBadge.innerHTML = `<span class="accent${item.domain}">${DOMAIN_META[item.domain].short}</span> · ${DOMAIN_META[item.domain].name}`;
       questionText.textContent = item.text;
+      questionEn.textContent = item.source;
       questionSub.textContent = `题目来源：${item.source} · 选项越靠右，表示越符合你。`;
+      completionNote.classList.add("hidden");
       const existing = state.answers[state.index];
       renderScale(existing);
       btnPrev.disabled = state.index === 0;
@@ -778,9 +1040,10 @@
       progressText.textContent = "未开始";
       progressBar.style.width = "0%";
       questionIndex.textContent = "";
-      domainBadge.textContent = "IPIP-NEO-60";
       questionText.textContent = "点击“开始测试”进入。";
+      questionEn.textContent = "Each item is shown in Chinese with the original English wording.";
       questionSub.textContent = "结果会自动保存为本地记录。";
+      completionNote.classList.add("hidden");
       renderScale(null);
       btnPrev.disabled = true;
       btnPrev.style.opacity = .45;
@@ -790,7 +1053,15 @@
     }
 
     function nextStep(){
+      if(state.completed) return;
       if(!state.started){
+        syncNameFromInput();
+        if(!state.name){
+          nameInput.focus();
+          nameInput.reportValidity?.();
+          alert("请先填写昵称。");
+          return;
+        }
         state.started = true;
         state.index = 0;
         renderQuestion();
@@ -806,6 +1077,7 @@
     }
 
     function prevStep(){
+      if(state.completed) return;
       if(state.index > 0){
         state.index -= 1;
         renderQuestion();
@@ -813,6 +1085,12 @@
     }
 
     function submit(){
+      syncNameFromInput();
+      if(!state.name){
+        nameInput.focus();
+        alert("请先填写昵称。");
+        return;
+      }
       if(state.answers.some(v => v == null)){
         const missing = state.answers.findIndex(v => v == null);
         state.index = missing;
@@ -821,59 +1099,61 @@
       }
       const result = computeResult();
       state.result = result;
+      state.completed = true;
       localStorage.setItem("big5_last_result_v1", JSON.stringify(result));
       saveHistory(result);
       clearDraft();
       renderResult(result);
+      renderCompleted();
     }
 
     function renderResult(result){
+      result = enrichResult(result);
+      state.result = result;
       results.classList.add("show");
-      reportMeta.textContent = `完成时间：${formatDate(result.createdAt)} · IPIP-NEO-60 · 本地生成`;
-      const cards = result.domains.map(d => `
+      const who = getDisplayName(result.name);
+      el("reportTitle").textContent = `${who}的 Big Five 报告`;
+      reportMeta.textContent = `受测者：${who} · 完成时间：${formatDate(result.createdAt)} · 画像名：${result.persona.name} · 代表人物：${result.persona.representative}`;
+      const cards = [
+        `<div class="scoreCard personaSummary">
+          <div class="name"><span>画像名</span><span>${result.persona.name}</span></div>
+          <div class="score">${result.persona.representative}</div>
+          <div class="barLabel">${result.personaCode}</div>
+          <div class="barLabel">${result.persona.explain}</div>
+        </div>`,
+        ...result.domains.map(d => `
         <div class="scoreCard">
           <div class="name"><span class="accent${d.key}">${d.name}</span><span>${d.level}</span></div>
           <div class="score">${d.pct}</div>
           <div class="bar"><i style="width:${d.pct}%;background:${d.color}"></i></div>
           <div class="barLabel">${d.desc}</div>
         </div>
-      `).join("");
+      `)
+      ].join("");
       summaryCards.innerHTML = cards;
-
-      insightGrid.innerHTML = result.domains.map(d => `
-        <div class="insight">
-          <h3 class="accent${d.key}">${d.name}</h3>
-          <p>${domainTone(d)} 当前分数为 <strong>${d.pct}</strong>，属于 <strong>${d.level}</strong> 区间。</p>
-        </div>
-      `).join("");
-
-      detailList.innerHTML = result.domains.map(d => {
-        const list = result.detail.filter(i => i.domain === d.key);
-        const rows = list.map(item => `
-          <tr>
-            <td>${item.id}</td>
-            <td>${item.text}</td>
-            <td>${item.value}</td>
-            <td>${item.reverse ? "是" : "否"}</td>
-            <td>${item.scored}</td>
-          </tr>
-        `).join("");
-        return `
-          <details ${d.key === "O" ? "open" : ""}>
-            <summary><span class="accent${d.key}">${d.name}</span> · ${d.pct} / 100 · ${d.level}</summary>
-            <table class="detailTable">
-              <thead>
-                <tr><th>#</th><th>题目</th><th>作答</th><th>反向</th><th>计分后</th></tr>
-              </thead>
-              <tbody>${rows}</tbody>
-            </table>
-          </details>
-        `;
-      }).join("");
-
       shareText.value = result.shareText;
+      questionEn.textContent = "结果页已生成，可复制全文或下载 9:16 图片。";
+      renderQrCode();
       renderHistory();
+      syncToolbar();
       results.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function renderCompleted(){
+      progressText.textContent = "已完成";
+      progressBar.style.width = "100%";
+      questionIndex.textContent = `${ITEMS.length} / ${ITEMS.length}`;
+      questionText.textContent = "测试已完成。";
+      questionEn.textContent = "Your report is ready below.";
+      questionSub.textContent = "可以直接查看结果、复制全文，或下载 9:16 图片。";
+      completionNote.classList.remove("hidden");
+      scale.innerHTML = "";
+      btnPrev.disabled = true;
+      btnPrev.style.opacity = .45;
+      btnNext.textContent = "已完成";
+      btnNext.disabled = true;
+      btnNext.style.opacity = .6;
+      syncToolbar();
     }
 
     function renderHistory(){
@@ -890,7 +1170,7 @@
           <div class="historyItem">
             <div>
               <div><strong>${formatDate(item.createdAt)}</strong></div>
-              <div class="small">最高维度：${top.name} ${top.pct}</div>
+              <div class="small">最高维度：${top.name} ${top.pct}${item.persona?.name ? ` · 画像名：${item.persona.name}` : ""}</div>
             </div>
             <button class="btn" type="button" data-history="${idx}">读取</button>
           </div>
@@ -899,12 +1179,17 @@
       historyList.querySelectorAll("[data-history]").forEach(btn => {
         btn.addEventListener("click", () => {
           const history = loadHistory();
-          const item = history[Number(btn.dataset.history)];
-          if(item){
-            state.result = item;
-            renderResult(item);
-          }
-        });
+        const item = history[Number(btn.dataset.history)];
+        if(item){
+          const normalized = enrichResult(item);
+          state.name = normalized.name || "";
+          nameInput.value = state.name;
+          state.result = normalized;
+          state.completed = true;
+          renderResult(normalized);
+          renderCompleted();
+        }
+      });
       });
     }
 
@@ -965,130 +1250,144 @@
       return y + clipped.length * lineHeight;
     }
 
-    function renderReportCanvas(result){
-      const width = 1400;
-      const pad = 72;
+    function loadImage(src){
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+
+    async function renderReportCanvas(result){
+      const width = 1080;
+      const height = 1920;
+      const pad = 56;
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       canvas.width = width;
-      canvas.height = 8000;
-
-      let y = pad;
+      canvas.height = height;
+      const who = getDisplayName(result.name);
       const contentWidth = width - pad * 2;
-
-      // Pre-calc approximate height by drawing into the same canvas.
-      function line(text, opts){ y = drawTextBlock(ctx, text, pad, y, contentWidth, opts) + 14; }
-      function sectionTitle(text){
-        ctx.fillStyle = "#cbd5e1";
-        ctx.font = "700 26px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-        ctx.fillText(text, pad, y);
-        y += 18;
-      }
-      function cardBox(drawFn, height){
-        const boxY = y;
-        ctx.save();
-        ctx.fillStyle = "rgba(255,255,255,0.04)";
-        ctx.strokeStyle = "rgba(148,163,184,0.18)";
-        ctx.lineWidth = 2;
-        roundRect(ctx, pad, boxY, contentWidth, height, 26);
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-        drawFn(boxY + 28);
-        y = boxY + height + 18;
-      }
-      function scoreBar(x, yy, w, pct, color){
-        ctx.fillStyle = "rgba(255,255,255,0.08)";
-        roundRect(ctx, x, yy, w, 18, 9);
-        ctx.fill();
-        ctx.fillStyle = color;
-        roundRect(ctx, x, yy, Math.max(14, w * pct / 100), 18, 9);
-        ctx.fill();
-      }
+      const lineColor = "rgba(255,255,255,.08)";
 
       ctx.fillStyle = "#0f172a";
-      ctx.fillRect(0,0,width,canvas.height);
+      ctx.fillRect(0,0,width,height);
       ctx.fillStyle = "#e5eefb";
-      ctx.font = "800 44px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.fillText("Big Five 报告", pad, y);
-      y += 58;
-      y = drawTextBlock(ctx, `完成时间：${formatDate(result.createdAt)} · IPIP-NEO-60 · 本地生成`, pad, y, contentWidth, { size: 22, color: "#8fa3bf" }) + 12;
+      ctx.font = "800 46px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText(`${who}的 Big Five 报告`, pad, 96);
+      ctx.fillStyle = "#8fa3bf";
+      ctx.font = "600 22px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText(`画像名：${result.persona.name} · 代表人物：${result.persona.representative}`, pad, 136);
+      ctx.fillText(`画像码：${result.personaCode} · 完成时间：${formatDate(result.createdAt)}`, pad, 168);
 
-      cardBox((topY) => {
+      roundRect(ctx, pad, 216, contentWidth, 250, 28);
+      ctx.fillStyle = "rgba(255,255,255,.04)";
+      ctx.fill();
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = "#8fa3bf";
+      ctx.font = "600 20px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText("结果画像", pad + 28, 256);
+      ctx.fillStyle = "#e5eefb";
+      ctx.font = "800 38px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText(result.persona.name, pad + 28, 310);
+      ctx.fillStyle = "#cbd5e1";
+      ctx.font = "700 24px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText(result.persona.representative, pad + 28, 350);
+      drawTextBlock(ctx, result.persona.explain, pad + 28, 392, contentWidth - 380, {
+        size: 22,
+        color: "#8fa3bf",
+        lineHeight: 32,
+        maxLines: 4
+      });
+
+      const qrUrl = state.qrDataUrl || await getQrDataUrl(location.href).catch(() => "");
+      ctx.fillStyle = "#fff";
+      roundRect(ctx, width - pad - 234, 262, 210, 210, 22);
+      ctx.fill();
+      if(qrUrl){
+        const img = await loadImage(qrUrl).catch(() => null);
+        if(img) ctx.drawImage(img, width - pad - 220, 276, 182, 182);
+      }
+      ctx.fillStyle = "#8fa3bf";
+      ctx.font = "600 18px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText("扫码继续打开同一页", width - pad - 234, 498);
+
+      roundRect(ctx, pad, 506, contentWidth, 620, 28);
+      ctx.fillStyle = "rgba(255,255,255,.04)";
+      ctx.fill();
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = "#e5eefb";
+      ctx.font = "700 24px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText("五维结果", pad + 28, 548);
+
+      const barTop = 594;
+      const barGap = 102;
+      result.domains.forEach((d, idx) => {
+        const y = barTop + idx * barGap;
+        ctx.fillStyle = "#e5eefb";
+        ctx.font = "700 22px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.fillText(d.name, pad + 28, y);
+        ctx.fillStyle = d.color;
+        ctx.font = "800 28px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.fillText(`${d.pct}`, width - pad - 90, y);
+        ctx.fillStyle = "rgba(255,255,255,.08)";
+        roundRect(ctx, pad + 28, y + 18, contentWidth - 56, 16, 8);
+        ctx.fill();
+        ctx.fillStyle = d.color;
+        roundRect(ctx, pad + 28, y + 18, Math.max(16, (contentWidth - 56) * d.pct / 100), 16, 8);
+        ctx.fill();
         ctx.fillStyle = "#8fa3bf";
-        ctx.font = "600 20px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-        ctx.fillText("总体分数", pad + 28, topY);
-        const colW = (contentWidth - 56) / 5;
-        result.domains.forEach((d, idx) => {
-          const x = pad + 28 + idx * colW;
-          ctx.fillStyle = "#e5eefb";
-          ctx.font = "800 34px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-          ctx.fillText(String(d.pct), x, topY + 48);
-          ctx.fillStyle = d.color;
-          scoreBar(x, topY + 66, colW - 24, d.pct, d.color);
-          ctx.fillStyle = "#94a3b8";
-          ctx.font = "600 18px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-          ctx.fillText(d.name, x, topY + 112);
-        });
-      }, 170);
-
-      sectionTitle("解读");
-      y += 20;
-      result.domains.forEach(d => {
-        cardBox((topY) => {
-          ctx.fillStyle = d.color;
-          ctx.font = "800 24px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-          ctx.fillText(`${d.name} · ${d.pct} / 100 · ${d.level}`, pad + 28, topY);
-          y = drawTextBlock(ctx, domainTone(d), pad + 28, topY + 38, contentWidth - 56, { size: 22, color: "#dbe7f7", lineHeight: 34 }) + 0;
-        }, 128);
+        ctx.font = "500 17px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.fillText(domainTone(d), pad + 28, y + 58);
       });
 
-      sectionTitle("可转发摘要");
-      y += 20;
-      cardBox((topY) => {
-        let yy = topY;
-        result.domains.forEach(d => {
-          ctx.fillStyle = "#e5eefb";
-          ctx.font = "700 22px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-          ctx.fillText(`${d.name}`, pad + 28, yy);
-          ctx.fillStyle = d.color;
-          ctx.font = "800 24px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-          ctx.fillText(`${d.pct}`, pad + 250, yy);
-          yy += 34;
-        });
-      }, 240);
-
-      sectionTitle("详细明细");
-      y += 20;
-      result.domains.forEach(d => {
-        const rows = result.detail.filter(i => i.domain === d.key);
-        const boxH = 90 + rows.length * 32;
-        cardBox((topY) => {
-          ctx.fillStyle = d.color;
-          ctx.font = "800 22px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-          ctx.fillText(`${d.name}`, pad + 28, topY);
-          ctx.fillStyle = "#8fa3bf";
-          ctx.font = "600 18px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-          ctx.fillText("题号 / 题目 / 作答 / 计分", pad + 28, topY + 30);
-          let yy = topY + 64;
-          rows.forEach(item => {
-            ctx.fillStyle = "#e5eefb";
-            ctx.font = "500 18px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-            const text = `${item.id}. ${item.text} · ${item.value} · ${item.scored}`;
-            const lines = wrapText(ctx, text, contentWidth - 56);
-            lines.slice(0, 2).forEach((ln, i) => ctx.fillText(ln, pad + 28, yy + i * 24));
-            yy += 30 + (lines.length - 1) * 24;
-          });
-        }, boxH);
+      roundRect(ctx, pad, 1154, contentWidth, 340, 28);
+      ctx.fillStyle = "rgba(255,255,255,.04)";
+      ctx.fill();
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = "#e5eefb";
+      ctx.font = "700 24px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText("一句总评", pad + 28, 1196);
+      drawTextBlock(ctx, result.persona.explain, pad + 28, 1242, contentWidth - 56, {
+        size: 28,
+        weight: 700,
+        color: "#dbe7f7",
+        lineHeight: 42,
+        maxLines: 5
       });
+      ctx.fillStyle = "#8fa3bf";
+      ctx.font = "500 18px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText("可直接转发这张图给微信、飞书、如流。", pad + 28, 1450);
 
-      const usedHeight = Math.ceil(y + pad);
-      const finalCanvas = document.createElement("canvas");
-      finalCanvas.width = width;
-      finalCanvas.height = usedHeight;
-      const finalCtx = finalCanvas.getContext("2d");
-      finalCtx.drawImage(canvas, 0, 0, width, usedHeight, 0, 0, width, usedHeight);
-      return finalCanvas;
+      roundRect(ctx, pad, 1516, contentWidth, 260, 28);
+      ctx.fillStyle = "rgba(255,255,255,.04)";
+      ctx.fill();
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = "#e5eefb";
+      ctx.font = "700 22px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText("再次打开", pad + 28, 1562);
+      drawTextBlock(ctx, `把这张图和上面的二维码一起发出去，别人就能直接回到同一份测试页。`, pad + 28, 1606, contentWidth - 280, {
+        size: 22,
+        color: "#cbd5e1",
+        lineHeight: 34,
+        maxLines: 3
+      });
+      if(qrUrl){
+        const img = await loadImage(qrUrl).catch(() => null);
+        if(img) ctx.drawImage(img, width - pad - 206, 1538, 154, 154);
+      }
+
+      return canvas;
     }
 
     function roundRect(ctx, x, y, w, h, r){
@@ -1104,13 +1403,13 @@
 
     async function downloadLongImage(){
       if(!state.result) return;
-      const canvas = renderReportCanvas(state.result);
+      const canvas = await renderReportCanvas(state.result);
       canvas.toBlob((blob) => {
         if(!blob) return;
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `big5-report-${new Date(state.result.createdAt).toISOString().slice(0,10)}.png`;
+        a.download = `big5-report-9x16-${new Date(state.result.createdAt).toISOString().slice(0,10)}.png`;
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 5000);
       }, "image/png");
@@ -1147,9 +1446,9 @@
   </style>
 </head>
 <body>
-  <div class="page">
+      <div class="page">
     <h1>Big Five 报告</h1>
-    <div class="meta">完成时间：${formatDate(r.createdAt)} · IPIP-NEO-60 · 本地生成</div>
+    <div class="meta">画像名：${r.persona.name} · 代表人物：${r.persona.representative} · 完成时间：${formatDate(r.createdAt)} · IPIP-NEO-60 · 本地生成</div>
     <div class="grid">
       ${r.domains.map(d => `
         <div class="card">
@@ -1161,15 +1460,15 @@
       `).join("")}
     </div>
     <div class="section">
-      ${r.domains.map(d => `
+              ${r.domains.map(d => `
         <div class="domain">
           <h3>${d.name} · ${d.pct} / 100</h3>
           <div>${domainTone(d)}</div>
           <table>
-            <thead><tr><th>#</th><th>题目</th><th>答题</th><th>计分</th></tr></thead>
+            <thead><tr><th>#</th><th>中文</th><th>英文原文</th><th>答题</th><th>计分</th></tr></thead>
             <tbody>
               ${r.detail.filter(i => i.domain === d.key).map(item => `
-                <tr><td>${item.id}</td><td>${item.text}</td><td>${item.value}</td><td>${item.scored}</td></tr>
+                <tr><td>${item.id}</td><td>${item.text}</td><td>${item.source}</td><td>${item.value}</td><td>${item.scored}</td></tr>
               `).join("")}
             </tbody>
           </table>
@@ -1192,26 +1491,18 @@
       w.document.close();
     }
 
-    function downloadJson(){
-      if(!state.result) return;
-      const blob = new Blob([JSON.stringify(state.result, null, 2)], { type: "application/json;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `big5-report-${new Date(state.result.createdAt).toISOString().slice(0,10)}.json`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-    }
-
     function resetAll(){
       if(!confirm("确认清空当前答案和结果吗？")) return;
       state.started = false;
       state.index = 0;
       state.answers = Array(ITEMS.length).fill(null);
       state.result = null;
+      state.completed = false;
+      state.qrDataUrl = "";
       results.classList.remove("show");
       renderStart();
       clearDraft();
+      syncToolbar();
     }
 
     function restoreFromDraftOrHistory(){
@@ -1222,17 +1513,22 @@
         state.answers = draft.answers.slice();
         if(state.started){
           renderQuestion();
+          renderHistory();
+          syncToolbar();
           return;
         }
       }
       renderStart();
+      syncToolbar();
       renderHistory();
       const last = localStorage.getItem("big5_last_result_v1");
       if(last){
         try{
           const result = JSON.parse(last);
           state.result = result;
+          state.completed = true;
           renderResult(result);
+          renderCompleted();
         }catch{}
       }
     }
@@ -1241,14 +1537,13 @@
     btnNext.addEventListener("click", nextStep);
     el("btnCopy").addEventListener("click", () => {
       const txt = state.result ? state.result.shareText : "请先完成测试。";
-      copyText(txt).then(() => alert("摘要已复制。"));
+      copyText(txt).then(() => alert("全文已复制。"));
     });
     el("btnCopyShare").addEventListener("click", () => {
-      copyText(state.result?.shareText || "").then(() => alert("转发文案已复制。"));
+      copyText(state.result?.shareText || "").then(() => alert("全文已复制。"));
     });
-    el("btnImage").addEventListener("click", downloadLongImage);
+    el("btnDownloadImage").addEventListener("click", downloadLongImage);
     el("btnPdf").addEventListener("click", openPrintWindow);
-    el("btnDownloadJson").addEventListener("click", downloadJson);
     el("btnReset").addEventListener("click", resetAll);
     el("btnResume").addEventListener("click", () => {
       const draft = loadDraft();
@@ -1259,10 +1554,18 @@
       state.started = true;
       state.index = clamp(draft.index ?? 0, 0, ITEMS.length - 1);
       state.answers = draft.answers.slice();
+      state.name = draft.name || state.name;
+      nameInput.value = state.name;
       renderQuestion();
+    });
+    nameInput.addEventListener("input", () => {
+      syncNameFromInput();
+      saveDraft();
     });
 
     updateDraftText();
+    restoreName();
+    syncToolbar();
     restoreFromDraftOrHistory();
   </script>
 </body>
