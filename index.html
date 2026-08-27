@@ -368,6 +368,47 @@
       font-size:14px;
       font-weight:700;
     }
+    .imagePanel{
+      display:grid;
+      gap:12px;
+    }
+    .imageStage{
+      display:grid;
+      grid-template-columns:minmax(220px,360px) minmax(0,1fr);
+      gap:16px;
+      align-items:start;
+    }
+    .imageFrame{
+      width:min(100%,360px);
+      aspect-ratio:9/16;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.1);
+      background:rgba(0,0,0,.2);
+      overflow:hidden;
+      display:grid;
+      place-items:center;
+    }
+    .imageFrame img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      display:none;
+    }
+    .imageFrame img.ready{display:block}
+    .imagePlaceholder{
+      padding:20px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.6;
+      text-align:center;
+    }
+    .imageFrame.hasImage .imagePlaceholder{display:none}
+    .imageActions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+    }
     .sectionTitle{
       margin:0 0 12px;
       font-size:18px;
@@ -455,6 +496,8 @@
       .scale button{min-height:54px}
       .nav{flex-direction:column}
       .nav .btn{width:100%}
+      .imageStage{grid-template-columns:1fr}
+      .imageFrame{width:min(100%,320px)}
     }
     @media print{
       body{background:#fff;color:#111}
@@ -517,7 +560,7 @@
             <p class="questionText" id="questionText">点击“开始测试”进入。</p>
             <p class="questionEn" id="questionEn"></p>
             <p class="questionSub" id="questionSub">结果会自动保存为本地记录。</p>
-            <div class="completionNote hidden" id="completionNote">测试已完成。下面的结果页包含可转发摘要、二维码和 9:16 图片下载入口。</div>
+            <div class="completionNote hidden" id="completionNote">测试已完成。下面先看结果，再看自动生成的 9:16 分享图。</div>
             <div class="scale" id="scale"></div>
             <div class="nav">
               <button class="btn" id="btnPrev" type="button">上一步</button>
@@ -553,10 +596,29 @@
             </div>
             <div class="reportActions">
               <button class="btn good" id="btnCopyShare" type="button">复制全文</button>
-              <button class="btn primary" id="btnDownloadImage" type="button">下载 9:16 图片</button>
+              <button class="btn primary" id="btnDownloadImage" type="button">下载图片</button>
             </div>
           </div>
           <div class="summary" id="summaryCards"></div>
+        </div>
+
+        <div class="body imagePanel">
+          <div class="sectionTitle">9:16 分享图</div>
+          <div class="imageStage">
+            <div class="imageFrame" id="imageFrame">
+              <img id="reportPreview" alt="Big Five 9:16 分享图预览" />
+              <div class="imagePlaceholder">完成测试后，这里会自动生成一张适合微信、飞书、如流转发的图片。</div>
+            </div>
+            <div class="shareCard">
+              <div class="smallTitle">图片已包含昵称、测试结果、人物画像和二维码</div>
+              <div class="imageActions">
+                <button class="btn" id="btnGenerateImage" type="button">重新生成</button>
+                <button class="btn good" id="btnShareImage" type="button">转发图片</button>
+                <button class="btn primary" id="btnDownloadImageInline" type="button">保存图片</button>
+              </div>
+              <div class="footnote" id="imageHint">测试完成后会自动生成预览。手机端如果不能直接转发，请点“保存图片”后再从聊天软件发送。</div>
+            </div>
+          </div>
         </div>
 
         <div class="body">
@@ -678,7 +740,8 @@
       result: null,
       completed: false,
       name: "",
-      qrDataUrl: ""
+      qrDataUrl: "",
+      reportImageUrl: ""
     };
 
     const el = (id) => document.getElementById(id);
@@ -702,6 +765,12 @@
     const lastStatus = el("lastStatus");
     const qrCanvas = el("qrCanvas");
     const qrHint = el("qrHint");
+    const reportPreview = el("reportPreview");
+    const imageFrame = el("imageFrame");
+    const imageHint = el("imageHint");
+    const btnGenerateImage = el("btnGenerateImage");
+    const btnShareImage = el("btnShareImage");
+    const btnDownloadImageInline = el("btnDownloadImageInline");
 
     const draftKey = "big5_draft_v1";
     const historyKey = "big5_history_v1";
@@ -725,9 +794,66 @@
 
     function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
 
+    function hashCode(text){
+      let h = 0;
+      for(const ch of String(text || "")){
+        h = ((h << 5) - h + ch.charCodeAt(0)) | 0;
+      }
+      return Math.abs(h);
+    }
+
     function buildPersonaCode(domains){
       const byKey = Object.fromEntries(domains.map(d => [d.key, d.level]));
       return PERSONA_ORDER.map(key => `${key}${byKey[key] || "中"}`).join(" ");
+    }
+
+    function traitSentence(domain){
+      if(domain.key === "O"){
+        if(domain.pct >= 67) return "开放性高，脑子常常先去旅行，点子比日程还爱抢跑";
+        if(domain.pct >= 34) return "开放性中等，愿意试新，也不会为了新而新";
+        return "开放性偏低，更信熟路和实用，少折腾反而更稳";
+      }
+      if(domain.key === "C"){
+        if(domain.pct >= 67) return "尽责性高，做事有框架，收尾也常常像样，像自带进度条";
+        if(domain.pct >= 34) return "尽责性中等，能推进，也留得住一点弹性，不会把自己拧太紧";
+        return "尽责性偏低，节奏更看状态，临时提醒通常比讲三遍更有用";
+      }
+      if(domain.key === "E"){
+        if(domain.pct >= 67) return "外向性高，表达和行动都带劲，现场容易被你带热";
+        if(domain.pct >= 34) return "外向性中等，热闹和安静都能接住，像自带开关";
+        return "外向性偏低，更爱安静蓄电，熟人局里才真正放开";
+      }
+      if(domain.key === "A"){
+        if(domain.pct >= 67) return "宜人性高，待人有温度，合作时常常先替别人把台阶铺好";
+        if(domain.pct >= 34) return "宜人性中等，讲合作也讲边界，不会一味好说话";
+        return "宜人性偏低，说话更直，原则感常常跑在客气前面";
+      }
+      if(domain.key === "N"){
+        if(domain.pct >= 67) return "神经质高，对压力和风险更敏感，脑内预警系统比较勤快";
+        if(domain.pct >= 34) return "神经质中等，情绪和压力感受都不极端，切换还算顺";
+        return "神经质偏低，情绪稳定度不错，很多场面都能稳住";
+      }
+      return "";
+    }
+
+    function buildPersonaExplain(result){
+      const who = getDisplayName(result.name);
+      const sorted = [...result.domains].sort((a,b)=>b.pct-a.pct);
+      const seed = hashCode(result.personaCode || result.persona?.name || who);
+      const intros = [
+        `${who}的结果不是单一标签，而是一套混合配置。`,
+        `把五个维度合起来看，${who}更像是几种风格一起在线。`,
+        `这份报告看起来不像“像谁”，更像“怎么配”。`
+      ];
+      const closings = [
+        "一句话说，像是脑子、执行力和人情味都在场，偶尔还会自己跟自己开个小会。",
+        "整体像一台会升级的机器，配置不低，脾气也不算太难伺候。",
+        "你不是模板人，更像带版本号的人，稳定里还留着一点机灵。"
+      ];
+      const lead = intros[seed % intros.length];
+      const tail = closings[seed % closings.length];
+      const main = sorted.map((d) => traitSentence(d)).join("；");
+      return `${lead}${main}。${tail}`;
     }
 
     function lookupPersona(code){
@@ -740,14 +866,17 @@
 
     function enrichResult(result){
       if(!result || !Array.isArray(result.domains)) return result;
-      if(result.persona && result.personaCode) return result;
       const personaCode = result.personaCode || buildPersonaCode(result.domains);
-      const persona = result.persona || lookupPersona(personaCode);
+      const basePersona = result.persona || lookupPersona(personaCode);
+      const persona = {
+        ...basePersona,
+        explain: buildPersonaExplain({ ...result, personaCode, persona: basePersona })
+      };
       return {
         ...result,
         personaCode,
         persona,
-        shareText: result.shareText || buildShareText({ ...result, personaCode, persona })
+        shareText: buildShareText({ ...result, personaCode, persona })
       };
     }
 
@@ -893,17 +1022,7 @@
       const personaCode = buildPersonaCode(domains);
       const persona = lookupPersona(personaCode);
 
-      const shareTextValue = buildShareText({
-        createdAt,
-        domains,
-        detail,
-        top,
-        low,
-        personaCode,
-        persona
-      });
-
-      return {
+      return enrichResult({
         createdAt,
         name: state.name,
         domains,
@@ -911,9 +1030,8 @@
         top,
         low,
         personaCode,
-        persona,
-        shareText: shareTextValue
-      };
+        persona
+      });
     }
 
     function levelOf(pct){
@@ -971,21 +1089,11 @@
       lines.push("一句总评");
       lines.push(result.persona.explain);
       lines.push("");
-      lines.push("解读");
+      lines.push("五维概览");
       result.domains.forEach(d => {
-        lines.push(`${d.name}：${domainTone(d)}`);
+        lines.push(`${d.name}：${d.pct} / 100（${d.level}）· ${domainTone(d)}`);
       });
       lines.push("");
-      lines.push("明细");
-      result.domains.forEach(d => {
-        lines.push(`[${d.name}]`);
-        result.detail.filter(i => i.domain === d.key).forEach(item => {
-          lines.push(`#${item.id} ${item.text}`);
-          lines.push(`  EN: ${item.source}`);
-          lines.push(`  作答：${item.value} · 计分后：${item.scored}`);
-        });
-        lines.push("");
-      });
       lines.push("说明：这是一份自我了解报告，不是诊断。");
       return lines.join("\n");
     }
@@ -1110,6 +1218,7 @@
     function renderResult(result){
       result = enrichResult(result);
       state.result = result;
+      state.reportImageUrl = "";
       results.classList.add("show");
       const who = getDisplayName(result.name);
       el("reportTitle").textContent = `${who}的 Big Five 报告`;
@@ -1132,10 +1241,15 @@
       ].join("");
       summaryCards.innerHTML = cards;
       shareText.value = result.shareText;
-      questionEn.textContent = "结果页已生成，可复制全文或下载 9:16 图片。";
+      questionEn.textContent = "结果页已生成，可先看报告，再看自动生成的 9:16 图片。";
       renderQrCode();
       renderHistory();
       syncToolbar();
+      imageFrame.classList.remove("hasImage");
+      reportPreview.classList.remove("ready");
+      reportPreview.removeAttribute("src");
+      imageHint.textContent = "正在生成图片预览...";
+      void generateReportImage({ previewOnly: true });
       results.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
@@ -1145,7 +1259,7 @@
       questionIndex.textContent = `${ITEMS.length} / ${ITEMS.length}`;
       questionText.textContent = "测试已完成。";
       questionEn.textContent = "Your report is ready below.";
-      questionSub.textContent = "可以直接查看结果、复制全文，或下载 9:16 图片。";
+      questionSub.textContent = "可以直接查看结果、复制全文，或转发 9:16 图片。";
       completionNote.classList.remove("hidden");
       scale.innerHTML = "";
       btnPrev.disabled = true;
@@ -1390,6 +1504,30 @@
       return canvas;
     }
 
+    function canvasToBlob(canvas){
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => resolve(blob), "image/png");
+      });
+    }
+
+    async function generateReportImage({ previewOnly = false } = {}){
+      if(!state.result) return null;
+      imageHint.textContent = previewOnly ? "正在生成图片预览..." : "正在生成图片...";
+      const canvas = await renderReportCanvas(state.result);
+      const blob = await canvasToBlob(canvas);
+      if(!blob) return null;
+      const url = URL.createObjectURL(blob);
+      if(state.reportImageUrl && state.reportImageUrl.startsWith("blob:")){
+        try{ URL.revokeObjectURL(state.reportImageUrl); }catch(_){}
+      }
+      state.reportImageUrl = url;
+      reportPreview.src = url;
+      reportPreview.classList.add("ready");
+      imageFrame.classList.add("hasImage");
+      imageHint.textContent = "图片已经生成，可以直接转发、保存，或重新生成一次。";
+      return { blob, url };
+    }
+
     function roundRect(ctx, x, y, w, h, r){
       const rr = Math.min(r, w / 2, h / 2);
       ctx.beginPath();
@@ -1403,16 +1541,33 @@
 
     async function downloadLongImage(){
       if(!state.result) return;
-      const canvas = await renderReportCanvas(state.result);
-      canvas.toBlob((blob) => {
-        if(!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `big5-report-9x16-${new Date(state.result.createdAt).toISOString().slice(0,10)}.png`;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-      }, "image/png");
+      const result = state.reportImageUrl
+        ? { url: state.reportImageUrl }
+        : await generateReportImage();
+      if(!result) return;
+      const a = document.createElement("a");
+      a.href = result.url;
+      a.download = `big5-report-9x16-${new Date(state.result.createdAt).toISOString().slice(0,10)}.png`;
+      a.click();
+    }
+
+    async function shareReportImage(){
+      if(!state.result) return;
+      const result = await generateReportImage({ previewOnly: true });
+      if(!result) return;
+      const filename = `big5-report-9x16-${new Date(state.result.createdAt).toISOString().slice(0,10)}.png`;
+      const file = new File([result.blob], filename, { type: "image/png" });
+      if(navigator.canShare?.({ files: [file] }) && navigator.share){
+        try{
+          await navigator.share({
+            title: "Big Five 分享图",
+            text: `${getDisplayName(state.result.name)} 的测试结果`,
+            files: [file]
+          });
+          return;
+        }catch(_){}
+      }
+      await downloadLongImage();
     }
 
     function openPrintWindow(){
@@ -1499,6 +1654,7 @@
       state.result = null;
       state.completed = false;
       state.qrDataUrl = "";
+      state.reportImageUrl = "";
       results.classList.remove("show");
       renderStart();
       clearDraft();
@@ -1543,6 +1699,9 @@
       copyText(state.result?.shareText || "").then(() => alert("全文已复制。"));
     });
     el("btnDownloadImage").addEventListener("click", downloadLongImage);
+    btnGenerateImage.addEventListener("click", () => generateReportImage({ previewOnly: true }));
+    btnShareImage.addEventListener("click", shareReportImage);
+    btnDownloadImageInline.addEventListener("click", downloadLongImage);
     el("btnPdf").addEventListener("click", openPrintWindow);
     el("btnReset").addEventListener("click", resetAll);
     el("btnResume").addEventListener("click", () => {
