@@ -681,8 +681,17 @@
     };
     const PERSONA_LIBRARY = window.BIG5_PERSONA_LIBRARY || {};
     const AVATAR_MAP = window.BIG5_AVATAR_MAP || {};
+    const AVATAR_ZIP_URL = "./Big5头像包.zip";
+    const avatarArchive = {
+      ready: false,
+      loading: null,
+      index: new Map(),
+      urls: new Map(),
+      available: false,
+      bytes: null
+    };
     const PERSONA_ORDER = ["O", "C", "E", "A", "N"];
-    const APP_VERSION = "2.3";
+    const APP_VERSION = "2.4";
     const SHARE_URL = "https://wangchong8068-dot.github.io/Big5test/";
     const FIXED_QR_DATA_URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZoAAAGaAQAAAAAefbjOAAADT0lEQVR4nO1cW2rrMBAd2YZ8ytAFZCnKDu6SSpfUHVhLyQIK8mfAYS7zkJwELlwnpq6rOdDgIA1RRtN5HI3iEBYjNstlAExIYYpQmCIUpgiFKUJhilCYIvakCKfo5Ami64Bf3GnsAGDME06bLG8hTGgFRQQkpLuhkK4OYs/PLY/nLNRUXoEixuwAQmpp468OwE+Ag7/IAHuQzZa3CCb0iiK6h/cY+xZcSG+TC589uHA+oHsUMpVXZBEOfAKIxwv5CI4S05bLa0xoK0V4RBzIRwxjB5JRxJ5Cx+jERSBisQ3bp9+viMiVRA/g3hNQhXFA4IBxAk0rpAjZaHnLYEKvRw0s7xHg4jD2oJklRQ28nfD0JzUmtAtFgFSVoYSEkLTgwMHzANWc/MQDNHv44d+pMaGXLQIHDg7kFChdwIELz7spMylhFlGHj0AxC0TmI/wk/oA9g9oLwXxEJUL4QXnjOxIbJe6BTIDKjNhrZqmmssnyFsKEVogaSIkD1ZzyQimEho4cP3SeRY1q8gjI6YIvOQMfc5TcwiyiMqEWM+NwdXLIJckEx4rxQKN2rlGPkKPsQdNGPv4mA2GaSsipo4YOOw3f4eY+WWukXGYQM6EZxcMJOeUWlkfUlEcAh4nCRmluwVwVlR4cP6z6rITFdiH1gPFEJ9+jA4zHSQf4L6Q+M9vfvLzGhLbyET5T2cJLyRNnluoobifbPil+oyLglqJOMzWZjUHL0sxMmEVU02eZroWuJIwHxI8j0xMTdUpwmWGc5T439/mzz5DrCj3huHMUc0yxqFFHV12LEI8UNEbOIK8O45+vMq2dXHSlTeKHf6fGhFbII7y23s/nGtqxP/fSGR9Rhe3BzXkFIbfIZGZC6IlyLs6wWqOmO11A/baZyuYzcG6/VWZ7o+UthAmt1TGD9yz2fZ/M/GQ+oq47XQo66fIXJ2UGdWrftGLu5Tstggn94wYPxD7RJa5WSAng213gvzpkK5E5pj2oRxGI544CBiUTni920YschFNGsfHy/gsmtOadLhAT4ArjzL8WcEC2EvkFgRU+aRFMaCuGKsq/f8v3PrlPpmy/dFN1ED7fciJh+/SLFeHsl8l2sU+NCQlMEQpThMIUoTBFKEwRiu9TxF+762NQmQ3CvQAAAABJRU5ErkJggg==";
 
@@ -1374,9 +1383,101 @@
       });
     }
 
-    function getAvatarSrc(result){
+    function decodeUtf8(bytes){
+      return new TextDecoder("utf-8").decode(bytes);
+    }
+
+    function readUint16(view, offset){
+      return view.getUint16(offset, true);
+    }
+
+    function readUint32(view, offset){
+      return view.getUint32(offset, true);
+    }
+
+    function findEndOfCentralDirectory(bytes){
+      const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      const min = Math.max(0, bytes.byteLength - 65557);
+      for(let i = bytes.byteLength - 22; i >= min; i--){
+        if(readUint32(view, i) === 0x06054b50) return i;
+      }
+      return -1;
+    }
+
+    function parseStoredZip(bytes){
+      const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      const eocd = findEndOfCentralDirectory(bytes);
+      if(eocd < 0) throw new Error("zip eocd not found");
+      const totalEntries = readUint16(view, eocd + 10);
+      const cdOffset = readUint32(view, eocd + 16);
+      let offset = cdOffset;
+      const index = new Map();
+      for(let i = 0; i < totalEntries; i++){
+        if(readUint32(view, offset) !== 0x02014b50) throw new Error("zip central directory broken");
+        const method = readUint16(view, offset + 10);
+        const compSize = readUint32(view, offset + 20);
+        const nameLen = readUint16(view, offset + 28);
+        const extraLen = readUint16(view, offset + 30);
+        const commentLen = readUint16(view, offset + 32);
+        const localOffset = readUint32(view, offset + 42);
+        const nameBytes = bytes.slice(offset + 46, offset + 46 + nameLen);
+        const name = decodeUtf8(nameBytes);
+        if(method === 0 && !name.endsWith("/")){
+          const localNameLen = readUint16(view, localOffset + 26);
+          const localExtraLen = readUint16(view, localOffset + 28);
+          const dataOffset = localOffset + 30 + localNameLen + localExtraLen;
+          index.set(name, { dataOffset, compSize });
+        }
+        offset += 46 + nameLen + extraLen + commentLen;
+      }
+      return index;
+    }
+
+    async function ensureAvatarArchive(){
+      if(avatarArchive.ready) return avatarArchive.available;
+      if(avatarArchive.loading) return avatarArchive.loading;
+      avatarArchive.loading = (async () => {
+        try{
+          const res = await fetch(encodeURI(AVATAR_ZIP_URL), { cache: "force-cache" });
+          if(!res.ok) throw new Error(`zip fetch failed: ${res.status}`);
+          const bytes = new Uint8Array(await res.arrayBuffer());
+          avatarArchive.bytes = bytes;
+          avatarArchive.index = parseStoredZip(bytes);
+          avatarArchive.available = avatarArchive.index.size > 0;
+        }catch(_){
+          avatarArchive.available = false;
+        }finally{
+          avatarArchive.ready = true;
+        }
+        return avatarArchive.available;
+      })();
+      return avatarArchive.loading;
+    }
+
+    async function getAvatarBlobUrl(fileName){
+      const cached = avatarArchive.urls.get(fileName);
+      if(cached) return cached;
+      const key = `./avatars/${fileName}`;
+      const altKey = fileName;
+      const ok = await ensureAvatarArchive();
+      if(ok){
+        const entry = avatarArchive.index.get(key) || avatarArchive.index.get(altKey);
+        if(entry && avatarArchive.bytes){
+          const data = avatarArchive.bytes.slice(entry.dataOffset, entry.dataOffset + entry.compSize);
+          const blobUrl = URL.createObjectURL(new Blob([data], { type: "image/png" }));
+          avatarArchive.urls.set(fileName, blobUrl);
+          return blobUrl;
+        }
+      }
+      const fallback = key;
+      avatarArchive.urls.set(fileName, fallback);
+      return fallback;
+    }
+
+    function getAvatarFileName(result){
       const code = String(result?.personaCode || buildPersonaCode(result?.domains || []));
-      return AVATAR_MAP[code] || "";
+      const entry = AVATAR_MAP[code] || "";
+      return String(entry).replace(/^\.\/avatars\//, "");
     }
 
     function drawImageCover(ctx, img, x, y, w, h){
@@ -1431,6 +1532,14 @@
       ctx.font = "600 14px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
       ctx.fillText(code || "画像码", cx, y + size - 14);
       ctx.restore();
+    }
+
+    async function resolveAvatarImage(result){
+      const fileName = getAvatarFileName(result);
+      if(!fileName) return null;
+      const src = await getAvatarBlobUrl(fileName);
+      if(!src) return null;
+      return loadImage(src).catch(() => null);
     }
 
     function drawAvatarImage(ctx, img, x, y, size){
@@ -1499,8 +1608,7 @@
       ctx.fillStyle = "#8fa3bf";
       ctx.font = "600 20px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
       ctx.fillText("结果画像", pad + 28, 256);
-      const avatarSrc = getAvatarSrc(result);
-      const avatarImg = avatarSrc ? await loadImage(avatarSrc).catch(() => null) : null;
+      const avatarImg = await resolveAvatarImage(result);
       if(avatarImg){
         drawAvatarImage(ctx, avatarImg, pad + 74, 286, 360);
       }else{
