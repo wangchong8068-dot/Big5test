@@ -68,6 +68,18 @@
       font-size:20px;
       line-height:1.1;
     }
+    .versionBadge{
+      display:inline-flex;
+      align-items:center;
+      margin-left:8px;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:12px;
+      line-height:1.4;
+      color:var(--muted);
+      background:rgba(255,255,255,.06);
+      vertical-align:middle;
+    }
     .brand p,.hint{margin:0;color:var(--muted);font-size:13px}
     .toolbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
     .btn{
@@ -518,7 +530,7 @@
         <div class="brand">
           <div class="logo"></div>
           <div>
-            <h1>Big Five 大五人格测试</h1>
+            <h1>Big Five 大五人格测试 <span class="versionBadge" id="pageVersion"></span></h1>
             <p>基于 IPIP-NEO-60 的单文件测试与结果报告</p>
           </div>
         </div>
@@ -591,7 +603,7 @@
         <div class="reportHero">
           <div class="reportTop">
             <div>
-              <h2 class="reportTitle" id="reportTitle">你的 Big Five 报告</h2>
+              <h2 class="reportTitle" id="reportTitle">Big Five 报告</h2>
               <div class="reportMeta" id="reportMeta"></div>
             </div>
             <div class="reportActions">
@@ -627,7 +639,7 @@
             <div class="qrBox"><canvas id="qrCanvas" width="112" height="112"></canvas></div>
             <div class="shareCard">
               <div class="smallTitle">扫这个码，直接打开同一份测试页</div>
-              <div class="footnote" id="qrHint">二维码会指向当前访问地址。</div>
+              <div class="footnote" id="qrHint">二维码指向固定分享地址。</div>
             </div>
           </div>
         </div>
@@ -641,8 +653,8 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <script src="./Big5画像库数据.js"></script>
+  <script src="./Big5头像映射.js"></script>
   <script>
     const SCALE_LABELS = [
       "非常不符合",
@@ -668,7 +680,11 @@
       N: { title: "警觉者", hint: "偏好观察风险与边界", mark: "◐" }
     };
     const PERSONA_LIBRARY = window.BIG5_PERSONA_LIBRARY || {};
+    const AVATAR_MAP = window.BIG5_AVATAR_MAP || {};
     const PERSONA_ORDER = ["O", "C", "E", "A", "N"];
+    const APP_VERSION = "2.3";
+    const SHARE_URL = "https://wangchong8068-dot.github.io/Big5test/";
+    const FIXED_QR_DATA_URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZoAAAGaAQAAAAAefbjOAAADT0lEQVR4nO1cW2rrMBAd2YZ8ytAFZCnKDu6SSpfUHVhLyQIK8mfAYS7zkJwELlwnpq6rOdDgIA1RRtN5HI3iEBYjNstlAExIYYpQmCIUpgiFKUJhilCYIvakCKfo5Ami64Bf3GnsAGDME06bLG8hTGgFRQQkpLuhkK4OYs/PLY/nLNRUXoEixuwAQmpp468OwE+Ag7/IAHuQzZa3CCb0iiK6h/cY+xZcSG+TC589uHA+oHsUMpVXZBEOfAKIxwv5CI4S05bLa0xoK0V4RBzIRwxjB5JRxJ5Cx+jERSBisQ3bp9+viMiVRA/g3hNQhXFA4IBxAk0rpAjZaHnLYEKvRw0s7xHg4jD2oJklRQ28nfD0JzUmtAtFgFSVoYSEkLTgwMHzANWc/MQDNHv44d+pMaGXLQIHDg7kFChdwIELz7spMylhFlGHj0AxC0TmI/wk/oA9g9oLwXxEJUL4QXnjOxIbJe6BTIDKjNhrZqmmssnyFsKEVogaSIkD1ZzyQimEho4cP3SeRY1q8gjI6YIvOQMfc5TcwiyiMqEWM+NwdXLIJckEx4rxQKN2rlGPkKPsQdNGPv4mA2GaSsipo4YOOw3f4eY+WWukXGYQM6EZxcMJOeUWlkfUlEcAh4nCRmluwVwVlR4cP6z6rITFdiH1gPFEJ9+jA4zHSQf4L6Q+M9vfvLzGhLbyET5T2cJLyRNnluoobifbPil+oyLglqJOMzWZjUHL0sxMmEVU02eZroWuJIwHxI8j0xMTdUpwmWGc5T439/mzz5DrCj3huHMUc0yxqFFHV12LEI8UNEbOIK8O45+vMq2dXHSlTeKHf6fGhFbII7y23s/nGtqxP/fSGR9Rhe3BzXkFIbfIZGZC6IlyLs6wWqOmO11A/baZyuYzcG6/VWZ7o+UthAmt1TGD9yz2fZ/M/GQ+oq47XQo66fIXJ2UGdWrftGLu5Tstggn94wYPxD7RJa5WSAng213gvzpkK5E5pj2oRxGI544CBiUTni920YschFNGsfHy/gsmtOadLhAT4ArjzL8WcEC2EvkFgRU+aRFMaCuGKsq/f8v3PrlPpmy/dFN1ED7fciJh+/SLFeHsl8l2sU+NCQlMEQpThMIUoTBFKEwRiu9TxF+762NQmQ3CvQAAAABJRU5ErkJggg==";
 
     const ITEMS = [
       { id: 1, domain: "N", reverse: false, text: "容易为各种事情担心。", source: "Worry about things." },
@@ -765,6 +781,7 @@
     const lastStatus = el("lastStatus");
     const qrCanvas = el("qrCanvas");
     const qrHint = el("qrHint");
+    const pageVersion = el("pageVersion");
     const reportPreview = el("reportPreview");
     const imageFrame = el("imageFrame");
     const imageHint = el("imageHint");
@@ -784,6 +801,8 @@
       el("btnImage").classList.add("hidden");
       el("btnPdf").classList.add("hidden");
     }
+
+    pageVersion.textContent = `v${APP_VERSION}`;
 
     function formatDate(ts){
       return new Intl.DateTimeFormat("zh-CN",{
@@ -914,39 +933,21 @@
       draftText.textContent = draft ? `草稿已保存 · ${formatDate(draft.updatedAt)}` : "";
     }
 
-    function getQrDataUrl(text){
-      return new Promise((resolve, reject) => {
-        if(!window.QRCode?.toDataURL){
-          reject(new Error("QRCode unavailable"));
-          return;
-        }
-        QRCode.toDataURL(text, { width: 112, margin: 1 }, (err, url) => {
-          if(err) reject(err);
-          else resolve(url);
-        });
-      });
-    }
-
     function renderQrCode(){
-      const url = location.href;
-      qrHint.textContent = url;
-      if(window.QRCode?.toCanvas){
-        QRCode.toCanvas(qrCanvas, url, { width: 112, margin: 1 }, (err) => {
-          if(err){
-            qrHint.textContent = "二维码生成失败，请检查网络后重试。";
-            state.qrDataUrl = "";
-            return;
-          }
-        });
-        getQrDataUrl(url).then(dataUrl => {
-          state.qrDataUrl = dataUrl;
-        }).catch(() => {
-          state.qrDataUrl = "";
-        });
-      }else{
-        qrHint.textContent = "二维码库未加载，页面仍可正常使用。";
-        state.qrDataUrl = "";
-      }
+      qrHint.textContent = SHARE_URL;
+      const img = new Image();
+      img.onload = () => {
+        const ctx = qrCanvas.getContext("2d");
+        ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
+        ctx.drawImage(img, 0, 0, qrCanvas.width, qrCanvas.height);
+        state.qrDataUrl = FIXED_QR_DATA_URL;
+      };
+      img.onerror = () => {
+        const ctx = qrCanvas.getContext("2d");
+        ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
+        state.qrDataUrl = FIXED_QR_DATA_URL;
+      };
+      img.src = FIXED_QR_DATA_URL;
     }
 
     function syncNameFromInput(){
@@ -1228,7 +1229,6 @@
           <div class="name"><span>画像名</span><span>${result.persona.name}</span></div>
           <div class="score">${result.persona.representative}</div>
           <div class="barLabel">${result.personaCode}</div>
-          <div class="barLabel">${result.persona.explain}</div>
         </div>`,
         ...result.domains.map(d => `
         <div class="scoreCard">
@@ -1367,10 +1367,93 @@
     function loadImage(src){
       return new Promise((resolve, reject) => {
         const img = new Image();
+        const finalSrc = /^data:|^blob:|^https?:/i.test(src) ? src : encodeURI(src);
         img.onload = () => resolve(img);
         img.onerror = reject;
-        img.src = src;
+        img.src = finalSrc;
       });
+    }
+
+    function getAvatarSrc(result){
+      const code = String(result?.personaCode || buildPersonaCode(result?.domains || []));
+      return AVATAR_MAP[code] || "";
+    }
+
+    function drawImageCover(ctx, img, x, y, w, h){
+      const scale = Math.max(w / img.width, h / img.height);
+      const sw = w / scale;
+      const sh = h / scale;
+      const sx = Math.max(0, (img.width - sw) / 2);
+      const sy = Math.max(0, (img.height - sh) / 2);
+      ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+    }
+
+    function drawPersonaAvatar(ctx, result, x, y, size){
+      const code = String(result.personaCode || "");
+      const seed = hashCode(code + "|" + (result.persona?.name || ""));
+      const accent = ["#60a5fa", "#34d399", "#f59e0b", "#22d3ee", "#fb7185"][seed % 5];
+      const bg = ["#13203a", "#182640", "#162b35", "#251b39", "#2c1b25"][seed % 5];
+      const name = String(result.persona?.representative || "");
+      const initials = name.replace(/[^\u4e00-\u9fa5A-Za-z]/g, "").slice(0, 2) || "人";
+      const r = size / 2;
+      const cx = x + r;
+      const cy = y + r;
+
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      roundRect(ctx, x, y, size, size, 26);
+      ctx.fill();
+      const grad = ctx.createLinearGradient(x, y, x + size, y + size);
+      grad.addColorStop(0, bg);
+      grad.addColorStop(1, accent);
+      ctx.fillStyle = grad;
+      roundRect(ctx, x + 10, y + 10, size - 20, size - 20, 22);
+      ctx.fill();
+
+      ctx.fillStyle = "rgba(255,255,255,.18)";
+      ctx.beginPath();
+      ctx.arc(cx, cy - 18, 46, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(cx - 68, cy + 54);
+      ctx.quadraticCurveTo(cx, cy + 6, cx + 68, cy + 54);
+      ctx.quadraticCurveTo(cx, cy + 80, cx - 68, cy + 54);
+      ctx.fill();
+
+      ctx.fillStyle = "#fff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = "800 44px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText(initials, cx, cy - 18);
+      ctx.font = "700 18px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText(result.persona?.name || "画像", cx, y + size - 34);
+      ctx.fillStyle = "rgba(255,255,255,.8)";
+      ctx.font = "600 14px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText(code || "画像码", cx, y + size - 14);
+      ctx.restore();
+    }
+
+    function drawAvatarImage(ctx, img, x, y, size){
+      ctx.save();
+      const bg = ctx.createLinearGradient(x, y, x + size, y + size);
+      bg.addColorStop(0, "#13203a");
+      bg.addColorStop(1, "#1e3a5f");
+      roundRect(ctx, x, y, size, size, 26);
+      ctx.fillStyle = "#fff";
+      ctx.fill();
+      roundRect(ctx, x + 10, y + 10, size - 20, size - 20, 22);
+      ctx.fillStyle = bg;
+      ctx.fill();
+      ctx.save();
+      roundRect(ctx, x + 10, y + 10, size - 20, size - 20, 22);
+      ctx.clip();
+      drawImageCover(ctx, img, x + 10, y + 10, size - 20, size - 20);
+      ctx.restore();
+      ctx.strokeStyle = "rgba(255,255,255,.14)";
+      ctx.lineWidth = 2;
+      roundRect(ctx, x + 10, y + 10, size - 20, size - 20, 22);
+      ctx.stroke();
+      ctx.restore();
     }
 
     async function renderReportCanvas(result){
@@ -1395,93 +1478,79 @@
       ctx.fillText(`画像名：${result.persona.name} · 代表人物：${result.persona.representative}`, pad, 136);
       ctx.fillText(`画像码：${result.personaCode} · 完成时间：${formatDate(result.createdAt)}`, pad, 168);
 
-      roundRect(ctx, pad, 216, contentWidth, 250, 28);
+      const topCardY = 216;
+      const topCardH = 660;
+      const leftW = 520;
+      const rightX = pad + leftW + 24;
+      const rightW = contentWidth - leftW - 24;
+      roundRect(ctx, pad, topCardY, contentWidth, topCardH, 28);
       ctx.fillStyle = "rgba(255,255,255,.04)";
       ctx.fill();
       ctx.strokeStyle = lineColor;
       ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(255,255,255,.08)";
+      ctx.beginPath();
+      ctx.moveTo(rightX - 16, topCardY + 28);
+      ctx.lineTo(rightX - 16, topCardY + topCardH - 28);
       ctx.stroke();
 
       ctx.fillStyle = "#8fa3bf";
       ctx.font = "600 20px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
       ctx.fillText("结果画像", pad + 28, 256);
-      ctx.fillStyle = "#e5eefb";
-      ctx.font = "800 38px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.fillText(result.persona.name, pad + 28, 310);
-      ctx.fillStyle = "#cbd5e1";
-      ctx.font = "700 24px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.fillText(result.persona.representative, pad + 28, 350);
-      drawTextBlock(ctx, result.persona.explain, pad + 28, 392, contentWidth - 380, {
-        size: 22,
-        color: "#8fa3bf",
-        lineHeight: 32,
-        maxLines: 4
-      });
-
-      const qrUrl = state.qrDataUrl || await getQrDataUrl(location.href).catch(() => "");
-      ctx.fillStyle = "#fff";
-      roundRect(ctx, width - pad - 234, 262, 210, 210, 22);
-      ctx.fill();
-      if(qrUrl){
-        const img = await loadImage(qrUrl).catch(() => null);
-        if(img) ctx.drawImage(img, width - pad - 220, 276, 182, 182);
+      const avatarSrc = getAvatarSrc(result);
+      const avatarImg = avatarSrc ? await loadImage(avatarSrc).catch(() => null) : null;
+      if(avatarImg){
+        drawAvatarImage(ctx, avatarImg, pad + 74, 286, 360);
+      }else{
+        drawPersonaAvatar(ctx, result, pad + 74, 286, 360);
       }
+
+      ctx.fillStyle = "#e5eefb";
+      ctx.font = "800 36px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText(result.persona.name, pad + 28, 682);
+      ctx.fillStyle = "#cbd5e1";
+      ctx.font = "700 22px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText(result.persona.representative, pad + 28, 720);
       ctx.fillStyle = "#8fa3bf";
       ctx.font = "600 18px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.fillText("扫码继续打开同一页", width - pad - 234, 498);
+      ctx.fillText("一句总评", pad + 28, 764);
+      drawTextBlock(ctx, result.persona.explain, pad + 28, 796, leftW - 56, {
+        size: 22,
+        weight: 600,
+        color: "#dbe7f7",
+        lineHeight: 32,
+        maxLines: 3
+      });
 
-      roundRect(ctx, pad, 506, contentWidth, 620, 28);
-      ctx.fillStyle = "rgba(255,255,255,.04)";
-      ctx.fill();
-      ctx.strokeStyle = lineColor;
-      ctx.lineWidth = 2;
-      ctx.stroke();
       ctx.fillStyle = "#e5eefb";
       ctx.font = "700 24px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.fillText("五维结果", pad + 28, 548);
+      ctx.fillText("五维结果", rightX + 8, 256);
 
-      const barTop = 594;
-      const barGap = 102;
+      const barTop = 306;
+      const barGap = 86;
       result.domains.forEach((d, idx) => {
         const y = barTop + idx * barGap;
         ctx.fillStyle = "#e5eefb";
-        ctx.font = "700 22px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-        ctx.fillText(d.name, pad + 28, y);
+        ctx.font = "700 20px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.fillText(d.name, rightX + 8, y);
         ctx.fillStyle = d.color;
-        ctx.font = "800 28px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-        ctx.fillText(`${d.pct}`, width - pad - 90, y);
+        ctx.font = "800 26px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.fillText(`${d.pct}`, width - pad - 76, y);
         ctx.fillStyle = "rgba(255,255,255,.08)";
-        roundRect(ctx, pad + 28, y + 18, contentWidth - 56, 16, 8);
+        roundRect(ctx, rightX + 8, y + 16, rightW - 56, 14, 8);
         ctx.fill();
         ctx.fillStyle = d.color;
-        roundRect(ctx, pad + 28, y + 18, Math.max(16, (contentWidth - 56) * d.pct / 100), 16, 8);
+        roundRect(ctx, rightX + 8, y + 16, Math.max(16, (rightW - 56) * d.pct / 100), 14, 8);
         ctx.fill();
         ctx.fillStyle = "#8fa3bf";
-        ctx.font = "500 17px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-        ctx.fillText(domainTone(d), pad + 28, y + 58);
+        ctx.font = "500 15px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.fillText(domainTone(d), rightX + 8, y + 48);
       });
 
-      roundRect(ctx, pad, 1154, contentWidth, 340, 28);
-      ctx.fillStyle = "rgba(255,255,255,.04)";
-      ctx.fill();
-      ctx.strokeStyle = lineColor;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.fillStyle = "#e5eefb";
-      ctx.font = "700 24px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.fillText("一句总评", pad + 28, 1196);
-      drawTextBlock(ctx, result.persona.explain, pad + 28, 1242, contentWidth - 56, {
-        size: 28,
-        weight: 700,
-        color: "#dbe7f7",
-        lineHeight: 42,
-        maxLines: 5
-      });
-      ctx.fillStyle = "#8fa3bf";
-      ctx.font = "500 18px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.fillText("可直接转发这张图给微信、飞书、如流。", pad + 28, 1450);
-
-      roundRect(ctx, pad, 1516, contentWidth, 260, 28);
+      const qrCardY = 916;
+      roundRect(ctx, pad, qrCardY, contentWidth, 260, 28);
       ctx.fillStyle = "rgba(255,255,255,.04)";
       ctx.fill();
       ctx.strokeStyle = lineColor;
@@ -1489,16 +1558,17 @@
       ctx.stroke();
       ctx.fillStyle = "#e5eefb";
       ctx.font = "700 22px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.fillText("再次打开", pad + 28, 1562);
-      drawTextBlock(ctx, `把这张图和上面的二维码一起发出去，别人就能直接回到同一份测试页。`, pad + 28, 1606, contentWidth - 280, {
+      ctx.fillText("再次打开", pad + 28, qrCardY + 46);
+      drawTextBlock(ctx, `把这张图和上面的二维码一起发出去，别人就能直接回到同一份测试页。`, pad + 28, qrCardY + 88, contentWidth - 280, {
         size: 22,
         color: "#cbd5e1",
         lineHeight: 34,
         maxLines: 3
       });
+      const qrUrl = state.qrDataUrl || FIXED_QR_DATA_URL;
       if(qrUrl){
         const img = await loadImage(qrUrl).catch(() => null);
-        if(img) ctx.drawImage(img, width - pad - 206, 1538, 154, 154);
+        if(img) ctx.drawImage(img, width - pad - 206, qrCardY + 22, 154, 154);
       }
 
       return canvas;
@@ -1513,19 +1583,29 @@
     async function generateReportImage({ previewOnly = false } = {}){
       if(!state.result) return null;
       imageHint.textContent = previewOnly ? "正在生成图片预览..." : "正在生成图片...";
-      const canvas = await renderReportCanvas(state.result);
-      const blob = await canvasToBlob(canvas);
-      if(!blob) return null;
-      const url = URL.createObjectURL(blob);
-      if(state.reportImageUrl && state.reportImageUrl.startsWith("blob:")){
-        try{ URL.revokeObjectURL(state.reportImageUrl); }catch(_){}
+      try{
+        const canvas = await renderReportCanvas(state.result);
+        const blob = await canvasToBlob(canvas);
+        if(!blob) return null;
+        const url = URL.createObjectURL(blob);
+        if(state.reportImageUrl && state.reportImageUrl.startsWith("blob:")){
+          try{ URL.revokeObjectURL(state.reportImageUrl); }catch(_){}
+        }
+        state.reportImageUrl = url;
+        reportPreview.src = url;
+        reportPreview.classList.add("ready");
+        imageFrame.classList.add("hasImage");
+        imageHint.textContent = "图片已经生成，可以直接转发、保存，或重新生成一次。";
+        return { blob, url };
+      }catch(err){
+        const msg = String(err?.message || err || "");
+        if(/tainted canvases/i.test(msg) || /Tainted canvases/i.test(msg)){
+          imageHint.textContent = "当前是本地文件方式打开，浏览器会限制本地头像导出。请用 GitHub Pages 的 https 链接打开，9:16 图片才会完整生成。";
+        }else{
+          imageHint.textContent = "图片生成失败，请刷新后重试。";
+        }
+        return null;
       }
-      state.reportImageUrl = url;
-      reportPreview.src = url;
-      reportPreview.classList.add("ready");
-      imageFrame.classList.add("hasImage");
-      imageHint.textContent = "图片已经生成，可以直接转发、保存，或重新生成一次。";
-      return { blob, url };
     }
 
     function roundRect(ctx, x, y, w, h, r){
