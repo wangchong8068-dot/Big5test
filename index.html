@@ -384,37 +384,43 @@
       display:grid;
       gap:12px;
     }
-    .imageStage{
-      display:grid;
-      grid-template-columns:minmax(220px,360px) minmax(0,1fr);
-      gap:16px;
-      align-items:start;
-    }
-    .imageFrame{
-      width:min(100%,360px);
-      aspect-ratio:9/16;
-      border-radius:16px;
-      border:1px solid rgba(255,255,255,.1);
-      background:rgba(0,0,0,.2);
-      overflow:hidden;
-      display:grid;
-      place-items:center;
-    }
-    .imageFrame img{
-      width:100%;
-      height:100%;
-      object-fit:contain;
+    .imageModal{
+      position:fixed;
+      inset:0;
       display:none;
-    }
-    .imageFrame img.ready{display:block}
-    .imagePlaceholder{
+      align-items:center;
+      justify-content:center;
+      background:rgba(2,6,23,.82);
+      backdrop-filter:blur(10px);
+      z-index:60;
       padding:20px;
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.6;
-      text-align:center;
     }
-    .imageFrame.hasImage .imagePlaceholder{display:none}
+    .imageModal.open{display:flex}
+    .imageModalPanel{
+      width:min(94vw, 440px);
+      max-height:92vh;
+      display:grid;
+      gap:12px;
+    }
+    .imageModalStage{
+      background:#0b1220;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:18px;
+      overflow:hidden;
+      box-shadow:var(--shadow);
+      max-height:calc(92vh - 72px);
+    }
+    .imageModalStage img{
+      display:block;
+      width:100%;
+      height:auto;
+    }
+    .imageModalActions{
+      display:flex;
+      gap:8px;
+      justify-content:center;
+      flex-wrap:wrap;
+    }
     .imageActions{
       display:flex;
       flex-wrap:wrap;
@@ -615,21 +621,16 @@
         </div>
 
         <div class="body imagePanel">
-          <div class="sectionTitle">9:16 分享图</div>
-          <div class="imageStage">
-            <div class="imageFrame" id="imageFrame">
-              <img id="reportPreview" alt="Big Five 9:16 分享图预览" />
-              <div class="imagePlaceholder">完成测试后，这里会自动生成一张适合微信、飞书、如流转发的图片。</div>
+          <div class="sectionTitle">测试结果</div>
+          <div class="shareCard">
+            <div class="smallTitle">点开后会弹出 9:16 大图</div>
+            <div class="imageActions">
+              <button class="btn primary" id="btnOpenImage" type="button">查看测试结果</button>
+              <button class="btn" id="btnGenerateImage" type="button">重新生成</button>
+              <button class="btn good" id="btnShareImage" type="button">转发图片</button>
+              <button class="btn primary" id="btnDownloadImageInline" type="button">保存图片</button>
             </div>
-            <div class="shareCard">
-              <div class="smallTitle">图片已包含昵称、测试结果、人物画像和二维码</div>
-              <div class="imageActions">
-                <button class="btn" id="btnGenerateImage" type="button">重新生成</button>
-                <button class="btn good" id="btnShareImage" type="button">转发图片</button>
-                <button class="btn primary" id="btnDownloadImageInline" type="button">保存图片</button>
-              </div>
-              <div class="footnote" id="imageHint">测试完成后会自动生成预览。手机端如果不能直接转发，请点“保存图片”后再从聊天软件发送。</div>
-            </div>
+            <div class="footnote" id="imageHint">测试完成后会自动生成结果图，点“查看测试结果”会弹出大图。</div>
           </div>
         </div>
 
@@ -653,8 +654,24 @@
     </div>
   </div>
 
+  <canvas id="reportPreview" class="hidden" width="1080" height="1920" aria-label="Big Five 9:16 分享图预览"></canvas>
+
+  <div class="imageModal" id="imageModal" aria-hidden="true">
+    <div class="imageModalPanel" role="dialog" aria-modal="true" aria-label="9:16 分享图预览">
+      <div class="imageModalStage">
+        <img id="imageModalImg" alt="9:16 分享图大图预览" />
+      </div>
+      <div class="imageModalActions">
+        <button class="btn" id="btnCloseImageModal" type="button">关闭</button>
+        <button class="btn good" id="btnShareImageModal" type="button">转发图片</button>
+        <button class="btn primary" id="btnDownloadImageModal" type="button">保存图片</button>
+      </div>
+    </div>
+  </div>
+
   <script src="./Big5画像库数据.js"></script>
   <script src="./Big5头像映射.js"></script>
+  <script src="./Big5头像包.data.js"></script>
   <script>
     const SCALE_LABELS = [
       "非常不符合",
@@ -681,7 +698,8 @@
     };
     const PERSONA_LIBRARY = window.BIG5_PERSONA_LIBRARY || {};
     const AVATAR_MAP = window.BIG5_AVATAR_MAP || {};
-    const AVATAR_ZIP_URL = "./Big5头像包.zip";
+    const AVATAR_ZIP_URL = new URL("./Big5头像包.zip", document.baseURI).href;
+    const AVATAR_ZIP_BASE64 = window.BIG5_AVATAR_ZIP_BASE64 || "";
     const avatarArchive = {
       ready: false,
       loading: null,
@@ -691,7 +709,7 @@
       bytes: null
     };
     const PERSONA_ORDER = ["O", "C", "E", "A", "N"];
-    const APP_VERSION = "2.4";
+    const APP_VERSION = "2.6";
     const SHARE_URL = "https://wangchong8068-dot.github.io/Big5test/";
     const FIXED_QR_DATA_URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZoAAAGaAQAAAAAefbjOAAADT0lEQVR4nO1cW2rrMBAd2YZ8ytAFZCnKDu6SSpfUHVhLyQIK8mfAYS7zkJwELlwnpq6rOdDgIA1RRtN5HI3iEBYjNstlAExIYYpQmCIUpgiFKUJhilCYIvakCKfo5Ami64Bf3GnsAGDME06bLG8hTGgFRQQkpLuhkK4OYs/PLY/nLNRUXoEixuwAQmpp468OwE+Ag7/IAHuQzZa3CCb0iiK6h/cY+xZcSG+TC589uHA+oHsUMpVXZBEOfAKIxwv5CI4S05bLa0xoK0V4RBzIRwxjB5JRxJ5Cx+jERSBisQ3bp9+viMiVRA/g3hNQhXFA4IBxAk0rpAjZaHnLYEKvRw0s7xHg4jD2oJklRQ28nfD0JzUmtAtFgFSVoYSEkLTgwMHzANWc/MQDNHv44d+pMaGXLQIHDg7kFChdwIELz7spMylhFlGHj0AxC0TmI/wk/oA9g9oLwXxEJUL4QXnjOxIbJe6BTIDKjNhrZqmmssnyFsKEVogaSIkD1ZzyQimEho4cP3SeRY1q8gjI6YIvOQMfc5TcwiyiMqEWM+NwdXLIJckEx4rxQKN2rlGPkKPsQdNGPv4mA2GaSsipo4YOOw3f4eY+WWukXGYQM6EZxcMJOeUWlkfUlEcAh4nCRmluwVwVlR4cP6z6rITFdiH1gPFEJ9+jA4zHSQf4L6Q+M9vfvLzGhLbyET5T2cJLyRNnluoobifbPil+oyLglqJOMzWZjUHL0sxMmEVU02eZroWuJIwHxI8j0xMTdUpwmWGc5T439/mzz5DrCj3huHMUc0yxqFFHV12LEI8UNEbOIK8O45+vMq2dXHSlTeKHf6fGhFbII7y23s/nGtqxP/fSGR9Rhe3BzXkFIbfIZGZC6IlyLs6wWqOmO11A/baZyuYzcG6/VWZ7o+UthAmt1TGD9yz2fZ/M/GQ+oq47XQo66fIXJ2UGdWrftGLu5Tstggn94wYPxD7RJa5WSAng213gvzpkK5E5pj2oRxGI544CBiUTni920YschFNGsfHy/gsmtOadLhAT4ArjzL8WcEC2EvkFgRU+aRFMaCuGKsq/f8v3PrlPpmy/dFN1ED7fciJh+/SLFeHsl8l2sU+NCQlMEQpThMIUoTBFKEwRiu9TxF+762NQmQ3CvQAAAABJRU5ErkJggg==";
 
@@ -792,11 +810,16 @@
     const qrHint = el("qrHint");
     const pageVersion = el("pageVersion");
     const reportPreview = el("reportPreview");
-    const imageFrame = el("imageFrame");
     const imageHint = el("imageHint");
+    const imageModal = el("imageModal");
+    const imageModalImg = el("imageModalImg");
     const btnGenerateImage = el("btnGenerateImage");
+    const btnOpenImage = el("btnOpenImage");
     const btnShareImage = el("btnShareImage");
     const btnDownloadImageInline = el("btnDownloadImageInline");
+    const btnCloseImageModal = el("btnCloseImageModal");
+    const btnShareImageModal = el("btnShareImageModal");
+    const btnDownloadImageModal = el("btnDownloadImageModal");
 
     const draftKey = "big5_draft_v1";
     const historyKey = "big5_history_v1";
@@ -809,6 +832,22 @@
       el("btnCopy").classList.add("hidden");
       el("btnImage").classList.add("hidden");
       el("btnPdf").classList.add("hidden");
+    }
+
+    async function openImageModal(){
+      if(!state.result) return;
+      if(!state.reportImageUrl){
+        const generated = await generateReportImage({ previewOnly: false });
+        if(!generated?.url) return;
+      }
+      imageModalImg.src = state.reportImageUrl;
+      imageModal.classList.add("open");
+      imageModal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeImageModal(){
+      imageModal.classList.remove("open");
+      imageModal.setAttribute("aria-hidden", "true");
     }
 
     pageVersion.textContent = `v${APP_VERSION}`;
@@ -894,8 +933,9 @@
 
     function enrichResult(result){
       if(!result || !Array.isArray(result.domains)) return result;
-      const personaCode = result.personaCode || buildPersonaCode(result.domains);
-      const basePersona = result.persona || lookupPersona(personaCode);
+      const personaCode = buildPersonaCode(result.domains);
+      const latestPersona = lookupPersona(personaCode);
+      const basePersona = latestPersona.representative !== "待补充" ? latestPersona : (result.persona || latestPersona);
       const persona = {
         ...basePersona,
         explain: buildPersonaExplain({ ...result, personaCode, persona: basePersona })
@@ -1215,7 +1255,7 @@
         renderQuestion();
         return;
       }
-      const result = computeResult();
+      const result = enrichResult(computeResult());
       state.result = result;
       state.completed = true;
       localStorage.setItem("big5_last_result_v1", JSON.stringify(result));
@@ -1254,11 +1294,10 @@
       renderQrCode();
       renderHistory();
       syncToolbar();
-      imageFrame.classList.remove("hasImage");
       reportPreview.classList.remove("ready");
-      reportPreview.removeAttribute("src");
+      reportPreview.getContext("2d")?.clearRect(0, 0, reportPreview.width, reportPreview.height);
       imageHint.textContent = "正在生成图片预览...";
-      void generateReportImage({ previewOnly: true });
+      requestAnimationFrame(() => void generateReportImage({ previewOnly: true }));
       results.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
@@ -1383,8 +1422,28 @@
       });
     }
 
+    function guessImageMime(bytes){
+      if(!bytes || bytes.length < 12) return "image/webp";
+      const head = String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3]);
+      if(head === "RIFF"){
+        const fmt = String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]);
+        if(fmt === "WEBP") return "image/webp";
+      }
+      if(bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return "image/png";
+      if(bytes[0] === 0xff && bytes[1] === 0xd8) return "image/jpeg";
+      return "image/webp";
+    }
+
     function decodeUtf8(bytes){
       return new TextDecoder("utf-8").decode(bytes);
+    }
+
+    function bytesToBase64(bytes){
+      let binary = "";
+      for(let i = 0; i < bytes.length; i++){
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
     }
 
     function readUint16(view, offset){
@@ -1438,9 +1497,16 @@
       if(avatarArchive.loading) return avatarArchive.loading;
       avatarArchive.loading = (async () => {
         try{
-          const res = await fetch(encodeURI(AVATAR_ZIP_URL), { cache: "force-cache" });
-          if(!res.ok) throw new Error(`zip fetch failed: ${res.status}`);
-          const bytes = new Uint8Array(await res.arrayBuffer());
+          let bytes = null;
+          if(AVATAR_ZIP_BASE64){
+            const bin = atob(AVATAR_ZIP_BASE64);
+            bytes = new Uint8Array(bin.length);
+            for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          }else{
+            const res = await fetch(encodeURI(AVATAR_ZIP_URL), { cache: "force-cache" });
+            if(!res.ok) throw new Error(`zip fetch failed: ${res.status}`);
+            bytes = new Uint8Array(await res.arrayBuffer());
+          }
           avatarArchive.bytes = bytes;
           avatarArchive.index = parseStoredZip(bytes);
           avatarArchive.available = avatarArchive.index.size > 0;
@@ -1457,19 +1523,26 @@
     async function getAvatarBlobUrl(fileName){
       const cached = avatarArchive.urls.get(fileName);
       if(cached) return cached;
-      const key = `./avatars/${fileName}`;
-      const altKey = fileName;
+      const keys = [
+        `./avatars/${fileName}`,
+        `avatars/${fileName}`,
+        fileName
+      ];
       const ok = await ensureAvatarArchive();
       if(ok){
-        const entry = avatarArchive.index.get(key) || avatarArchive.index.get(altKey);
+        const entry = keys.reduce((found, key) => found || avatarArchive.index.get(key), null);
         if(entry && avatarArchive.bytes){
-          const data = avatarArchive.bytes.slice(entry.dataOffset, entry.dataOffset + entry.compSize);
-          const blobUrl = URL.createObjectURL(new Blob([data], { type: "image/png" }));
-          avatarArchive.urls.set(fileName, blobUrl);
-          return blobUrl;
+          try{
+            const data = avatarArchive.bytes.slice(entry.dataOffset, entry.dataOffset + entry.compSize);
+            const dataUrl = `data:${guessImageMime(data)};base64,${bytesToBase64(data)}`;
+            avatarArchive.urls.set(fileName, dataUrl);
+            return dataUrl;
+          }catch(_){
+            // fall through to direct file path
+          }
         }
       }
-      const fallback = key;
+      const fallback = `./avatars/${fileName}`;
       avatarArchive.urls.set(fileName, fallback);
       return fallback;
     }
@@ -1535,32 +1608,39 @@
     }
 
     async function resolveAvatarImage(result){
-      const fileName = getAvatarFileName(result);
-      if(!fileName) return null;
-      const src = await getAvatarBlobUrl(fileName);
-      if(!src) return null;
-      return loadImage(src).catch(() => null);
+      try{
+        const fileName = getAvatarFileName(result);
+        if(!fileName) return null;
+        const src = await getAvatarBlobUrl(fileName);
+        if(!src) return null;
+        const blobImage = await loadImage(src).catch(() => null);
+        if(blobImage) return blobImage;
+        const directSrc = new URL(`./avatars/${fileName}`, document.baseURI).href;
+        return await loadImage(directSrc).catch(() => null);
+      }catch(_){
+        return null;
+      }
     }
 
     function drawAvatarImage(ctx, img, x, y, size){
       ctx.save();
       const bg = ctx.createLinearGradient(x, y, x + size, y + size);
-      bg.addColorStop(0, "#13203a");
-      bg.addColorStop(1, "#1e3a5f");
+      bg.addColorStop(0, "#101b31");
+      bg.addColorStop(1, "#1b2f4f");
       roundRect(ctx, x, y, size, size, 26);
-      ctx.fillStyle = "#fff";
-      ctx.fill();
-      roundRect(ctx, x + 10, y + 10, size - 20, size - 20, 22);
       ctx.fillStyle = bg;
       ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,.05)";
+      roundRect(ctx, x + 12, y + 12, size - 24, size - 24, 22);
+      ctx.fill();
       ctx.save();
-      roundRect(ctx, x + 10, y + 10, size - 20, size - 20, 22);
+      roundRect(ctx, x + 12, y + 12, size - 24, size - 24, 22);
       ctx.clip();
-      drawImageCover(ctx, img, x + 10, y + 10, size - 20, size - 20);
+      drawImageCover(ctx, img, x + 12, y + 12, size - 24, size - 24);
       ctx.restore();
-      ctx.strokeStyle = "rgba(255,255,255,.14)";
-      ctx.lineWidth = 2;
-      roundRect(ctx, x + 10, y + 10, size - 20, size - 20, 22);
+      ctx.strokeStyle = "rgba(255,255,255,.06)";
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, x + 12, y + 12, size - 24, size - 24, 22);
       ctx.stroke();
       ctx.restore();
     }
@@ -1588,10 +1668,11 @@
       ctx.fillText(`画像码：${result.personaCode} · 完成时间：${formatDate(result.createdAt)}`, pad, 168);
 
       const topCardY = 216;
-      const topCardH = 660;
-      const leftW = 520;
-      const rightX = pad + leftW + 24;
-      const rightW = contentWidth - leftW - 24;
+      const topCardH = 480;
+      const leftX = pad + 28;
+      const leftSize = 340;
+      const rightX = pad + 420;
+      const rightW = contentWidth - (rightX - pad) - 28;
       roundRect(ctx, pad, topCardY, contentWidth, topCardH, 28);
       ctx.fillStyle = "rgba(255,255,255,.04)";
       ctx.fill();
@@ -1599,66 +1680,75 @@
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      ctx.strokeStyle = "rgba(255,255,255,.08)";
-      ctx.beginPath();
-      ctx.moveTo(rightX - 16, topCardY + 28);
-      ctx.lineTo(rightX - 16, topCardY + topCardH - 28);
-      ctx.stroke();
-
       ctx.fillStyle = "#8fa3bf";
       ctx.font = "600 20px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
       ctx.fillText("结果画像", pad + 28, 256);
       const avatarImg = await resolveAvatarImage(result);
       if(avatarImg){
-        drawAvatarImage(ctx, avatarImg, pad + 74, 286, 360);
+        drawAvatarImage(ctx, avatarImg, leftX, 294, leftSize);
       }else{
-        drawPersonaAvatar(ctx, result, pad + 74, 286, 360);
+        drawPersonaAvatar(ctx, result, leftX, 294, leftSize);
       }
 
       ctx.fillStyle = "#e5eefb";
-      ctx.font = "800 36px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.fillText(result.persona.name, pad + 28, 682);
+      ctx.font = "800 38px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText(result.persona.name, rightX, 304);
       ctx.fillStyle = "#cbd5e1";
       ctx.font = "700 22px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.fillText(result.persona.representative, pad + 28, 720);
+      ctx.fillText(result.persona.representative, rightX, 348);
       ctx.fillStyle = "#8fa3bf";
-      ctx.font = "600 18px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.fillText("一句总评", pad + 28, 764);
-      drawTextBlock(ctx, result.persona.explain, pad + 28, 796, leftW - 56, {
-        size: 22,
+      ctx.font = "600 17px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText("一句总评", rightX, 398);
+      drawTextBlock(ctx, result.persona.explain, rightX, 432, rightW, {
+        size: 23,
         weight: 600,
         color: "#dbe7f7",
-        lineHeight: 32,
-        maxLines: 3
+        lineHeight: 34,
+        maxLines: 5
       });
+      ctx.fillStyle = "#8fa3bf";
+      ctx.font = "500 15px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText(`画像码 · ${result.personaCode}`, rightX, 620);
 
       ctx.fillStyle = "#e5eefb";
+      const scoreCardY = 734;
+      const scoreCardH = 392;
+      roundRect(ctx, pad, scoreCardY, contentWidth, scoreCardH, 28);
+      ctx.fillStyle = "rgba(255,255,255,.04)";
+      ctx.fill();
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = "#e5eefb";
       ctx.font = "700 24px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.fillText("五维结果", rightX + 8, 256);
+      ctx.fillText("五维结果", pad + 28, scoreCardY + 42);
+      ctx.fillStyle = "#8fa3bf";
+      ctx.font = "500 15px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText("每一项都保留一点空间，方便一眼读完。", pad + 28, scoreCardY + 68);
 
-      const barTop = 306;
-      const barGap = 86;
+      const barTop = scoreCardY + 110;
+      const barGap = 58;
       result.domains.forEach((d, idx) => {
         const y = barTop + idx * barGap;
         ctx.fillStyle = "#e5eefb";
-        ctx.font = "700 20px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-        ctx.fillText(d.name, rightX + 8, y);
+        ctx.font = "700 18px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.fillText(d.name, pad + 28, y);
         ctx.fillStyle = d.color;
-        ctx.font = "800 26px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-        ctx.fillText(`${d.pct}`, width - pad - 76, y);
+        ctx.font = "800 24px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.fillText(`${d.pct}`, width - pad - 64, y);
         ctx.fillStyle = "rgba(255,255,255,.08)";
-        roundRect(ctx, rightX + 8, y + 16, rightW - 56, 14, 8);
+        roundRect(ctx, pad + 28, y + 18, contentWidth - 156, 12, 8);
         ctx.fill();
         ctx.fillStyle = d.color;
-        roundRect(ctx, rightX + 8, y + 16, Math.max(16, (rightW - 56) * d.pct / 100), 14, 8);
+        roundRect(ctx, pad + 28, y + 18, Math.max(16, (contentWidth - 156) * d.pct / 100), 12, 8);
         ctx.fill();
         ctx.fillStyle = "#8fa3bf";
-        ctx.font = "500 15px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
-        ctx.fillText(domainTone(d), rightX + 8, y + 48);
+        ctx.font = "500 14px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.fillText(domainTone(d), pad + 28, y + 44);
       });
 
-      const qrCardY = 916;
-      roundRect(ctx, pad, qrCardY, contentWidth, 260, 28);
+      const qrCardY = 1142;
+      roundRect(ctx, pad, qrCardY, contentWidth, 282, 28);
       ctx.fillStyle = "rgba(255,255,255,.04)";
       ctx.fill();
       ctx.strokeStyle = lineColor;
@@ -1667,25 +1757,52 @@
       ctx.fillStyle = "#e5eefb";
       ctx.font = "700 22px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif";
       ctx.fillText("再次打开", pad + 28, qrCardY + 46);
-      drawTextBlock(ctx, `把这张图和上面的二维码一起发出去，别人就能直接回到同一份测试页。`, pad + 28, qrCardY + 88, contentWidth - 280, {
+      drawTextBlock(ctx, `把这张图和右侧二维码一起发出去，别人就能直接回到同一份测试页。`, pad + 28, qrCardY + 88, contentWidth - 260, {
         size: 22,
         color: "#cbd5e1",
         lineHeight: 34,
-        maxLines: 3
+        maxLines: 4
       });
       const qrUrl = state.qrDataUrl || FIXED_QR_DATA_URL;
       if(qrUrl){
         const img = await loadImage(qrUrl).catch(() => null);
-        if(img) ctx.drawImage(img, width - pad - 206, qrCardY + 22, 154, 154);
+        if(img) ctx.drawImage(img, width - pad - 212, qrCardY + 28, 168, 168);
       }
 
       return canvas;
     }
 
     function canvasToBlob(canvas){
-      return new Promise((resolve) => {
-        canvas.toBlob((blob) => resolve(blob), "image/png");
+      return new Promise((resolve, reject) => {
+        let done = false;
+        const timer = setTimeout(() => {
+          if(done) return;
+          done = true;
+          reject(new Error("canvas export timeout"));
+        }, 3000);
+        try{
+          canvas.toBlob((blob) => {
+            if(done) return;
+            done = true;
+            clearTimeout(timer);
+            if(blob) resolve(blob);
+            else reject(new Error("canvas export failed"));
+          }, "image/png");
+        }catch(err){
+          if(done) return;
+          done = true;
+          clearTimeout(timer);
+          reject(err);
+        }
       });
+    }
+
+    function canvasToDataUrl(canvas){
+      try{
+        return canvas.toDataURL("image/png");
+      }catch(_){
+        return "";
+      }
     }
 
     async function generateReportImage({ previewOnly = false } = {}){
@@ -1693,22 +1810,50 @@
       imageHint.textContent = previewOnly ? "正在生成图片预览..." : "正在生成图片...";
       try{
         const canvas = await renderReportCanvas(state.result);
-        const blob = await canvasToBlob(canvas);
-        if(!blob) return null;
-        const url = URL.createObjectURL(blob);
-        if(state.reportImageUrl && state.reportImageUrl.startsWith("blob:")){
-          try{ URL.revokeObjectURL(state.reportImageUrl); }catch(_){}
+        const previewCtx = reportPreview.getContext("2d");
+        if(previewCtx){
+          if(reportPreview.width !== canvas.width) reportPreview.width = canvas.width;
+          if(reportPreview.height !== canvas.height) reportPreview.height = canvas.height;
+          previewCtx.clearRect(0, 0, reportPreview.width, reportPreview.height);
+          previewCtx.drawImage(canvas, 0, 0);
         }
-        state.reportImageUrl = url;
-        reportPreview.src = url;
         reportPreview.classList.add("ready");
-        imageFrame.classList.add("hasImage");
+        if(previewOnly){
+          imageHint.textContent = "结果图已生成，点“查看测试结果”即可弹出大图。";
+        }
+        let blob = null;
+        let url = "";
+        let revokeUrl = "";
+        try{
+          blob = await canvasToBlob(canvas);
+          if(blob){
+            url = URL.createObjectURL(blob);
+            revokeUrl = state.reportImageUrl && state.reportImageUrl.startsWith("blob:") ? state.reportImageUrl : "";
+          }else{
+            url = canvasToDataUrl(canvas);
+          }
+        }catch(_){
+          url = canvasToDataUrl(canvas);
+        }
+        if(url){
+          state.reportImageUrl = url;
+        }
         imageHint.textContent = "图片已经生成，可以直接转发、保存，或重新生成一次。";
+        if(previewOnly && window.matchMedia("(max-width: 768px)").matches){
+          openImageModal();
+        }
+        if(revokeUrl){
+          try{ URL.revokeObjectURL(revokeUrl); }catch(_){}
+        }
         return { blob, url };
       }catch(err){
         const msg = String(err?.message || err || "");
-        if(/tainted canvases/i.test(msg) || /Tainted canvases/i.test(msg)){
-          imageHint.textContent = "当前是本地文件方式打开，浏览器会限制本地头像导出。请用 GitHub Pages 的 https 链接打开，9:16 图片才会完整生成。";
+        if(/tainted canvases/i.test(msg) || /Tainted canvases/i.test(msg) || /canvas export timeout/i.test(msg) || /canvas export failed/i.test(msg)){
+          if(location.protocol === "file:"){
+            imageHint.textContent = "当前是本地文件方式打开，图片导出会被浏览器限制。请用 GitHub Pages 的 https 链接打开，头像和 9:16 图片才会完整生成。";
+          }else{
+            imageHint.textContent = "图片导出被浏览器限制了，可能是头像资源没成功加载。请刷新后重试。";
+          }
         }else{
           imageHint.textContent = "图片生成失败，请刷新后重试。";
         }
@@ -1868,9 +2013,10 @@
       const last = localStorage.getItem("big5_last_result_v1");
       if(last){
         try{
-          const result = JSON.parse(last);
+          const result = enrichResult(JSON.parse(last));
           state.result = result;
           state.completed = true;
+          localStorage.setItem("big5_last_result_v1", JSON.stringify(result));
           renderResult(result);
           renderCompleted();
         }catch{}
@@ -1890,6 +2036,16 @@
     btnGenerateImage.addEventListener("click", () => generateReportImage({ previewOnly: true }));
     btnShareImage.addEventListener("click", shareReportImage);
     btnDownloadImageInline.addEventListener("click", downloadLongImage);
+    btnOpenImage.addEventListener("click", openImageModal);
+    btnCloseImageModal.addEventListener("click", closeImageModal);
+    btnShareImageModal.addEventListener("click", shareReportImage);
+    btnDownloadImageModal.addEventListener("click", downloadLongImage);
+    imageModal.addEventListener("click", (ev) => {
+      if(ev.target === imageModal) closeImageModal();
+    });
+    window.addEventListener("keydown", (ev) => {
+      if(ev.key === "Escape") closeImageModal();
+    });
     el("btnPdf").addEventListener("click", openPrintWindow);
     el("btnReset").addEventListener("click", resetAll);
     el("btnResume").addEventListener("click", () => {
